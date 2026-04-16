@@ -73,21 +73,6 @@ with open("bfsPath.csv") as f:
         x, y = map(float, line.strip().split(","))
         bfsPath.append((x, y))
 
-# RRT path
-rrtPath = []
-with open("rrtPath.csv") as f:
-    for line in f:
-        x, y = map(float, line.strip().split(","))
-        rrtPath.append((x, y))
-
-# JPS path
-jpsPath = []
-with open("jpsPath.csv") as f:
-    for line in f:
-        x, y = map(float, line.strip().split(","))
-        jpsPath.append((x, y))
-
-
 
 
 # Plotting
@@ -138,17 +123,6 @@ if (len(bfsPath) > 1):
     path_ys = [p[1] for p in bfsPath]
     plt.plot(path_xs, path_ys, color="orange", linewidth=2, label="BFS")
 
-# RRT Path
-if (len(rrtPath) > 1):
-    path_xs = [p[0] for p in rrtPath]
-    path_ys = [p[1] for p in rrtPath]
-    plt.plot(path_xs, path_ys, color="yellow", linewidth=2, label="RRT")
-
-# JPS Path
-if (len(jpsPath) > 1):
-    path_xs = [p[0] for p in jpsPath]
-    path_ys = [p[1] for p in jpsPath]
-    plt.plot(path_xs, path_ys, color="pink", linewidth=2, label="JPS")
 
 
 # Config
