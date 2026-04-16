@@ -1,4 +1,6 @@
 #pragma once
+#include <cmath>
+#include <algorithm>
 #include "../helpers/struct.hpp"
 #include "../helpers/function.hpp"
 using namespace std;
@@ -85,15 +87,19 @@ class ObstacleGenerator {
                 Point center = {(double)(rand() % (int)grid.width), (double)(rand() % (int)grid.height)};
 
                 // generate random angles
+                constexpr double PI = 3.14159265358979323846;
                 for (int i = 0; i < numVertices; i++) {
-                    double angle = ((double)rand() / RAND_MAX) * 2 * M_PI;
+                    double angle = ((double)rand() / RAND_MAX) * 2 * PI;
                     angles.push_back(angle);
                 }
                 sort(angles.begin(), angles.end());
                 // generate vertices
                 for (int i = 0; i < numVertices; i++) {
                     double radius = radius_min + ((double)rand() / RAND_MAX) * (radius_max - radius_min);
-                    vertices.push_back({center.x + radius * cos(angles[i]), center.y + radius * sin(angles[i])});
+                    Point p;
+                    p.x = center.x + radius * cos(angles[i]);
+                    p.y = center.y + radius * sin(angles[i]);
+                    vertices.push_back(p);
                 }
                 // clip obstacles
                 Obstacle obstacle = {clip(vertices, grid), {0, 0}};

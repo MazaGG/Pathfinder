@@ -2,6 +2,8 @@
 #include <vector>
 #include <utility>
 #include <limits>
+#include <cmath>
+#include <algorithm>
 #include "struct.hpp"
 using namespace std;
 
