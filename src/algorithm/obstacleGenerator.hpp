@@ -69,7 +69,7 @@ class ObstacleGenerator {
 
     public:
 
-        ObstacleGenerator(int seed, int n, int v_max, int radius_min=5, int radius_max=20, Grid grid={100, 100}) {
+        ObstacleGenerator(int seed, int n, int v_max=10, int radius_min=20, int radius_max=40, Grid grid={100, 100}) {
             srand(seed);
             this->n = n;
             this->v_max = v_max;
