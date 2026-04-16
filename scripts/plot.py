@@ -111,17 +111,17 @@ if (len(aStarGridPath) > 1):
     path_ys = [p[1] for p in aStarGridPath]
     plt.plot(path_xs, path_ys, color="red", linewidth=2, label="A* Grid")
 
-# Dijkstra Path
-if (len(dijkstraPath) > 1):
-    path_xs = [p[0] for p in dijkstraPath]
-    path_ys = [p[1] for p in dijkstraPath]
-    plt.plot(path_xs, path_ys, color="green", linewidth=2, label="Dijkstra")
+# # Dijkstra Path
+# if (len(dijkstraPath) > 1):
+#     path_xs = [p[0] for p in dijkstraPath]
+#     path_ys = [p[1] for p in dijkstraPath]
+#     plt.plot(path_xs, path_ys, color="green", linewidth=2, label="Dijkstra")
 
-# BFS Path
-if (len(bfsPath) > 1):
-    path_xs = [p[0] for p in bfsPath]
-    path_ys = [p[1] for p in bfsPath]
-    plt.plot(path_xs, path_ys, color="orange", linewidth=2, label="BFS")
+# # BFS Path
+# if (len(bfsPath) > 1):
+#     path_xs = [p[0] for p in bfsPath]
+#     path_ys = [p[1] for p in bfsPath]
+#     plt.plot(path_xs, path_ys, color="orange", linewidth=2, label="BFS")
 
 
 
