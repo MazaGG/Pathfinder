@@ -22,8 +22,17 @@ jobs:
       - name: Install tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake g++ python3 python3-pip
+          sudo apt-get install -y \
+            cmake \
+            g++ \
+            libcgal-dev \
+            libgmp-dev \
+            libmpfr-dev \
+            python3 \
+            python3-pip
+
           pip3 install matplotlib numpy
+      
       - name: Configure
         run: |
           rm -rf build
