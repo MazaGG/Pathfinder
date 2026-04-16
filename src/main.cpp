@@ -48,22 +48,22 @@ int main(int argc, char** argv) {
     HybridVoronoiA hybridVoronoiA(map, obstacles, start, goal);
     vector<Point> hybridVronoiAPath = hybridVoronoiA.getPath();
     vector<VoronoiVertex> graph = hybridVoronoiA.getGraph();
-    cout << "Hybrid Voronoi with A*: " << hybridVoronoiA.getTime() << "| " << hybridVoronoiA.getLength() << "\n";
+    cout << "Hybrid Voronoi with A*: " << hybridVoronoiA.getTime() << "ms | Length: " << hybridVoronoiA.getLength() << "\n";
 
     // A* Grid
     AStarGrid aStarGrid(map, start, goal);
     vector<Point> aStarGridPath = aStarGrid.getPath();
-    cout << "A* Grid: " << aStarGrid.getTime() << "| " << aStarGrid.getLength() << "\n";
+    cout << "A* Grid: " << aStarGrid.getTime() << "ms | Length: " << aStarGrid.getLength() << "\n";
 
     // Dijkstra
     DijkstraGrid dijkstraGrid(map, start, goal);
     vector<Point> dijkstraPath = dijkstraGrid.getPath();
-    cout << "Dijkstra: " << dijkstraGrid.getTime() << "ms\n";
+    cout << "Dijkstra: " << dijkstraGrid.getTime() << "ms | Length: " << dijkstraGrid.getLength() << "\n";
 
     // BFS
     BFSGrid bfs(map, start, goal);
     vector<Point> bfsPath = bfs.getPath();
-    cout << "Breadth First Search: " << bfs.getTime() << "ms\n";
+    cout << "Breadth First Search: " << bfs.getTime() << "ms | Length: " << bfs.getLength() << "\n";
 
 
 
