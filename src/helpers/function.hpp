@@ -64,7 +64,7 @@ Point intersectionPoint(const Point& p1, const Point& p2, const Point& q1, const
     double c2 = a2 * q1.x + b2 * q1.y;
     double determinant = a1 * b2 - a2 * b1;
 
-    if (abs(determinant) < 1e-9) {
+    if (abs(determinant) < 1e-6) {
         return {0, 0};
     }
     return {(b2 * c1 - b1 * c2) / determinant, (a1 * c2 - a2 * c1) / determinant};
@@ -168,4 +168,30 @@ double computePathLength(const vector<Point>& path) {
     }
 
     return len;
+}
+
+Point snapToGridBoundary(const Point& p, Grid& grid) {
+    const double EPS = 1e-6;
+    const double OFFSET = 0.5;
+    Point result = p;
+    
+    // Left boundary (x = 0) -> set to 0.5
+    if (abs(p.x) < EPS) {
+        result.x = OFFSET;
+    }
+    // Right boundary (x = grid.width) -> set to grid.width - 0.5
+    else if (abs(p.x - grid.width) < EPS) {
+        result.x = grid.width - OFFSET;
+    }
+    
+    // Bottom boundary (y = 0) -> set to 0.5
+    if (abs(p.y) < EPS) {
+        result.y = OFFSET;
+    }
+    // Top boundary (y = grid.height) -> set to grid.height - 0.5
+    else if (abs(p.y - grid.height) < EPS) {
+        result.y = grid.height - OFFSET;
+    }
+    
+    return result;
 }

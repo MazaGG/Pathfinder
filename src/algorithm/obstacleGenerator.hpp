@@ -102,7 +102,7 @@ class ObstacleGenerator {
                     vertices.push_back(p);
                 }
                 // clip obstacles
-                Obstacle obstacle = {clip(vertices, grid), {0, 0}};
+                Obstacle obstacle = {clip(vertices, grid), center};
                 obstacles.push_back(obstacle);
             }
 

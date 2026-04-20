@@ -4,7 +4,8 @@
 #include <chrono>
 #include "algorithm/obstacleGenerator.hpp"
 #include "algorithm/occupancyMapGenerator.hpp"
-#include "algorithm/_index.hpp"
+#include "algorithm/connectedComponentLabeler.hpp"
+#include "algorithm/voronoiDiagram.hpp"
 #include "benchmark/astar.hpp"
 #include "benchmark/dijkstra.hpp"
 #include "benchmark/bfs.hpp"
@@ -33,37 +34,48 @@ int main(int argc, char** argv) {
     OccupancyMapGenerator occupancyMap(grid);
     Grid map = occupancyMap.generateOccupancyMap(obstacles, grid);
 
+    // find isolated clusters
+    ConnectedComponentLabeler ccl(map, obstacles);
+    vector<Point> centers = ccl.getCenters();
+
+    // TEST
+    Grid clusters = ccl.getClusters();
+
+    // generate voronoi diagram
+    VoronoiDiagram voronoi(map, centers);
+    vector<VoronoiVertex> graph = voronoi.getVertices();
+
     // check if feasible
-    DijkstraGrid path(map, start, goal);
-    if (path.getPath().empty()) {
-        cout << "No path exists \n";
-        return 0;
-    }
+    // DijkstraGrid path(map, start, goal);
+    // if (path.getPath().empty()) {
+    //     cout << "No path exists \n";
+    //     return 0;
+    // }
 
 
 
     // Algorithms
 
     // Hybrid Voronoi with A*
-    HybridVoronoiA hybridVoronoiA(map, obstacles, start, goal);
-    vector<Point> hybridVronoiAPath = hybridVoronoiA.getPath();
-    vector<VoronoiVertex> graph = hybridVoronoiA.getGraph();
-    cout << "Hybrid Voronoi with A*: " << hybridVoronoiA.getTime() << "ms | Length: " << hybridVoronoiA.getLength() << "\n";
+    // HybridVoronoiA hybridVoronoiA(map, obstacles, start, goal);
+    // vector<Point> hybridVronoiAPath = hybridVoronoiA.getPath();
+    // vector<VoronoiVertex> graph = hybridVoronoiA.getGraph();
+    // cout << "Hybrid Voronoi with A*: " << hybridVoronoiA.getTime() << "ms | Length: " << hybridVoronoiA.getLength() << "\n";
 
-    // A* Grid
-    AStarGrid aStarGrid(map, start, goal);
-    vector<Point> aStarGridPath = aStarGrid.getPath();
-    cout << "A* Grid: " << aStarGrid.getTime() << "ms | Length: " << aStarGrid.getLength() << "\n";
+    // // A* Grid
+    // AStarGrid aStarGrid(map, start, goal);
+    // vector<Point> aStarGridPath = aStarGrid.getPath();
+    // cout << "A* Grid: " << aStarGrid.getTime() << "ms | Length: " << aStarGrid.getLength() << "\n";
 
-    // Dijkstra
-    DijkstraGrid dijkstraGrid(map, start, goal);
-    vector<Point> dijkstraPath = dijkstraGrid.getPath();
-    cout << "Dijkstra: " << dijkstraGrid.getTime() << "ms | Length: " << dijkstraGrid.getLength() << "\n";
+    // // Dijkstra
+    // DijkstraGrid dijkstraGrid(map, start, goal);
+    // vector<Point> dijkstraPath = dijkstraGrid.getPath();
+    // cout << "Dijkstra: " << dijkstraGrid.getTime() << "ms | Length: " << dijkstraGrid.getLength() << "\n";
 
-    // BFS
-    BFSGrid bfs(map, start, goal);
-    vector<Point> bfsPath = bfs.getPath();
-    cout << "Breadth First Search: " << bfs.getTime() << "ms | Length: " << bfs.getLength() << "\n";
+    // // BFS
+    // BFSGrid bfs(map, start, goal);
+    // vector<Point> bfsPath = bfs.getPath();
+    // cout << "Breadth First Search: " << bfs.getTime() << "ms | Length: " << bfs.getLength() << "\n";
 
 
 
@@ -90,41 +102,56 @@ int main(int argc, char** argv) {
     }
     file2.close();
 
-    ofstream file3("voronoi_vertices.csv");
-    for (int i = 0; i < graph.size(); i++) {
-        file3 << graph[i].position.x << "," << graph[i].position.y << "," << "[";
-        for (int j = 0; j < graph[i].neighbors.size(); j++) {
-            file3 << graph[i].neighbors[j];
-            if (j < graph[i].neighbors.size() - 1) {
-                file3 << ";";
-            }
-        }        file3 << "]\n";
+    ofstream file3("cluster_centers.csv");
+    for (int i = 0; i < centers.size(); i++) {
+        file3 << centers[i].x << "," << centers[i].y << "\n";
     }
     file3.close();
 
-    ofstream file4("hybridVoronoiAPath.csv");
-    for (int i = 0; i < hybridVronoiAPath.size(); i++) {
-        file4 << hybridVronoiAPath[i].x << "," << hybridVronoiAPath[i].y << "\n";
+    ofstream file4("voronoi_vertices.csv");
+    for (int i = 0; i < graph.size(); i++) {
+        file4 << graph[i].position.x << "," << graph[i].position.y << "," << "[";
+        for (int j = 0; j < graph[i].neighbors.size(); j++) {
+            file4 << graph[i].neighbors[j];
+            if (j < graph[i].neighbors.size() - 1) {
+                file4 << ";";
+            }
+        }        file4 << "]\n";
     }
     file4.close();
 
-    ofstream file5("aStarGridPath.csv");
-    for (int i = 0; i < aStarGridPath.size(); i++) {
-        file5 << aStarGridPath[i].x << "," << aStarGridPath[i].y << "\n";
+    ofstream file5("cluster_map.csv");
+    for (int y = 0; y < clusters.height; y++) {
+        for (int x = 0; x < clusters.width; x++) {
+            file5 << clusters.cells[y][x] << ",";
+        }
+        file5 << "\n";
     }
     file5.close();
 
-    ofstream file6("dijkstraPath.csv");
-    for (int i = 0; i < dijkstraPath.size(); i++) {
-        file6 << dijkstraPath[i].x << "," << dijkstraPath[i].y << "\n";
-    }
-    file6.close();
+    // ofstream file4("hybridVoronoiAPath.csv");
+    // for (int i = 0; i < hybridVronoiAPath.size(); i++) {
+    //     file4 << hybridVronoiAPath[i].x << "," << hybridVronoiAPath[i].y << "\n";
+    // }
+    // file4.close();
 
-    ofstream file7("bfsPath.csv");
-    for (int i = 0; i < bfsPath.size(); i++) {
-        file7 << bfsPath[i].x << "," << bfsPath[i].y << "\n";
-    }
-    file7.close();
+    // ofstream file5("aStarGridPath.csv");
+    // for (int i = 0; i < aStarGridPath.size(); i++) {
+    //     file5 << aStarGridPath[i].x << "," << aStarGridPath[i].y << "\n";
+    // }
+    // file5.close();
+
+    // ofstream file6("dijkstraPath.csv");
+    // for (int i = 0; i < dijkstraPath.size(); i++) {
+    //     file6 << dijkstraPath[i].x << "," << dijkstraPath[i].y << "\n";
+    // }
+    // file6.close();
+
+    // ofstream file7("bfsPath.csv");
+    // for (int i = 0; i < bfsPath.size(); i++) {
+    //     file7 << bfsPath[i].x << "," << bfsPath[i].y << "\n";
+    // }
+    // file7.close();
 
     return 0;
 

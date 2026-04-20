@@ -1,11 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-polygons = []
-occupancy_map = []
-vor_vertices = []
-
 # Load polygons
+polygons = []
 with open("obstacles.csv") as f:
     current = []
     for line in f:
@@ -17,13 +14,23 @@ with open("obstacles.csv") as f:
             current.append((x, y))
 
 # Load occupancy map
+occupancy_map = []
 with open("occupancy_map.csv") as f:
     for line in f:
         row = [int(v) for v in line.strip().split(",") if v != ""]
         occupancy_map.append(row)
 occupancy = np.array(occupancy_map)
 
+# Load cluster centers
+cluster_centers = []
+with open("cluster_centers.csv") as f:
+    for line in f:
+        x, y = map(float, line.strip().split(","))
+        cluster_centers.append((x,y))
+
+
 # Load voronoi vertices
+voronoi_vertices = []
 with open("voronoi_vertices.csv") as f:
     for line in f:
         line = line.strip()
@@ -40,38 +47,38 @@ with open("voronoi_vertices.csv") as f:
         else:
             neighbors = []
 
-        vor_vertices.append({
+        voronoi_vertices.append({
             "pos": (x, y),
             "neighbors": neighbors
         })
 
-# Load Hybrid Voronoi A* path
-hybridVoronoiAPath = []
-with open("hybridVoronoiAPath.csv") as f:
-    for line in f:
-        x, y = map(float, line.strip().split(","))
-        hybridVoronoiAPath.append((x, y))
+# # Load Hybrid Voronoi A* path
+# hybridVoronoiAPath = []
+# with open("hybridVoronoiAPath.csv") as f:
+#     for line in f:
+#         x, y = map(float, line.strip().split(","))
+#         hybridVoronoiAPath.append((x, y))
 
-# A* path
-aStarGridPath = []
-with open("aStarGridPath.csv") as f:
-    for line in f:
-        x, y = map(float, line.strip().split(","))
-        aStarGridPath.append((x, y))
+# # A* path
+# aStarGridPath = []
+# with open("aStarGridPath.csv") as f:
+#     for line in f:
+#         x, y = map(float, line.strip().split(","))
+#         aStarGridPath.append((x, y))
 
-# A* path
-dijkstraPath = []
-with open("dijkstraPath.csv") as f:
-    for line in f:
-        x, y = map(float, line.strip().split(","))
-        dijkstraPath.append((x, y))
+# # A* path
+# dijkstraPath = []
+# with open("dijkstraPath.csv") as f:
+#     for line in f:
+#         x, y = map(float, line.strip().split(","))
+#         dijkstraPath.append((x, y))
 
-# BFS path
-bfsPath = []
-with open("bfsPath.csv") as f:
-    for line in f:
-        x, y = map(float, line.strip().split(","))
-        bfsPath.append((x, y))
+# # BFS path
+# bfsPath = []
+# with open("bfsPath.csv") as f:
+#     for line in f:
+#         x, y = map(float, line.strip().split(","))
+#         bfsPath.append((x, y))
 
 
 
@@ -88,28 +95,31 @@ for poly in polygons:
     ys = [p[1] for p in poly] + [poly[0][1]]
     plt.plot(xs, ys, color="red", linewidth=1.5)
 
-for i, v in enumerate(vor_vertices):
+centers_x, centers_y = zip(*cluster_centers)
+plt.scatter(centers_x, centers_y, c='red', marker='o', label="Cluster Centers")
+
+for i, v in enumerate(voronoi_vertices):
     x1, y1 = v["pos"]
 
     for n in v["neighbors"]:
-        x2, y2 = vor_vertices[n]["pos"]
+        x2, y2 = voronoi_vertices[n]["pos"]
 
         plt.plot([x1, x2], [y1, y2], linewidth=1)
 
-xs = [v["pos"][0] for v in vor_vertices]
-ys = [v["pos"][1] for v in vor_vertices]
+xs = [v["pos"][0] for v in voronoi_vertices]
+ys = [v["pos"][1] for v in voronoi_vertices]
 
-# Hybrid Voronoi A* Path
-if (len(hybridVoronoiAPath) > 1):
-    path_xs = [p[0] for p in hybridVoronoiAPath]
-    path_ys = [p[1] for p in hybridVoronoiAPath]
-    plt.plot(path_xs, path_ys, color="blue", linewidth=2, label="Hybrid Voronoi A*")
+# # Hybrid Voronoi A* Path
+# if (len(hybridVoronoiAPath) > 1):
+#     path_xs = [p[0] for p in hybridVoronoiAPath]
+#     path_ys = [p[1] for p in hybridVoronoiAPath]
+#     plt.plot(path_xs, path_ys, color="blue", linewidth=2, label="Hybrid Voronoi A*")
 
-# A* Grid Path
-if (len(aStarGridPath) > 1):
-    path_xs = [p[0] for p in aStarGridPath]
-    path_ys = [p[1] for p in aStarGridPath]
-    plt.plot(path_xs, path_ys, color="red", linewidth=2, label="A* Grid")
+# # A* Grid Path
+# if (len(aStarGridPath) > 1):
+#     path_xs = [p[0] for p in aStarGridPath]
+#     path_ys = [p[1] for p in aStarGridPath]
+#     plt.plot(path_xs, path_ys, color="red", linewidth=2, label="A* Grid")
 
 # # Dijkstra Path
 # if (len(dijkstraPath) > 1):
