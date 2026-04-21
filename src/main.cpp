@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
 
     // generate voronoi diagram
     VoronoiDiagram voronoi(map, centers);
-    vector<VoronoiVertex> graph = voronoi.getVertices();
+    Delaunay graph = voronoi.getGraph();
 
     // check if feasible
     // DijkstraGrid path(map, start, goal);
@@ -109,16 +109,24 @@ int main(int argc, char** argv) {
     file3.close();
 
     ofstream file4("voronoi_vertices.csv");
-    for (int i = 0; i < graph.size(); i++) {
-        file4 << graph[i].position.x << "," << graph[i].position.y << "," << "[";
-        for (int j = 0; j < graph[i].neighbors.size(); j++) {
-            file4 << graph[i].neighbors[j];
-            if (j < graph[i].neighbors.size() - 1) {
-                file4 << ";";
-            }
-        }        file4 << "]\n";
+    for (auto i = graph.finite_faces_begin(); i != graph.finite_faces_end(); i++) {
+        Delaunay::Face_handle face = i;
+        K::Point_2 circumcenter = graph.circumcenter(face);
+        file4 << circumcenter.x() << "," << circumcenter.y() << "\n";
     }
     file4.close();
+
+    // ofstream file4("voronoi_vertices.csv");
+    // for (int i = 0; i < graph.size(); i++) {
+    //     file4 << graph[i].position.x << "," << graph[i].position.y << "," << "[";
+    //     for (int j = 0; j < graph[i].neighbors.size(); j++) {
+    //         file4 << graph[i].neighbors[j];
+    //         if (j < graph[i].neighbors.size() - 1) {
+    //             file4 << ";";
+    //         }
+    //     }        file4 << "]\n";
+    // }
+    // file4.close();
 
     ofstream file5("cluster_map.csv");
     for (int y = 0; y < clusters.height; y++) {

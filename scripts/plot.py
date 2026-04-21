@@ -33,24 +33,8 @@ with open("cluster_centers.csv") as f:
 voronoi_vertices = []
 with open("voronoi_vertices.csv") as f:
     for line in f:
-        line = line.strip()
-
-        # Split into parts
-        parts = line.split(",", 2)
-        x = float(parts[0])
-        y = float(parts[1])
-
-        # Extract neighbors inside [...]
-        neighbors_str = parts[2].strip()[1:-1]  # remove [ ]
-        if neighbors_str:
-            neighbors = list(map(int, neighbors_str.split(";")))
-        else:
-            neighbors = []
-
-        voronoi_vertices.append({
-            "pos": (x, y),
-            "neighbors": neighbors
-        })
+        x, y = map(float, line.strip().split(","))
+        voronoi_vertices.append((x,y))
 
 # # Load Hybrid Voronoi A* path
 # hybridVoronoiAPath = []
@@ -98,16 +82,19 @@ for poly in polygons:
 centers_x, centers_y = zip(*cluster_centers)
 plt.scatter(centers_x, centers_y, c='red', marker='o', label="Cluster Centers")
 
-for i, v in enumerate(voronoi_vertices):
-    x1, y1 = v["pos"]
+voronoi_x, voronoi_y = zip(*voronoi_vertices)
+plt.scatter(voronoi_x, voronoi_y, c='blue', marker='o', label="Voronoi Vertices")
 
-    for n in v["neighbors"]:
-        x2, y2 = voronoi_vertices[n]["pos"]
+# for i, v in enumerate(voronoi_vertices):
+#     x1, y1 = v["pos"]
 
-        plt.plot([x1, x2], [y1, y2], linewidth=1)
+#     for n in v["neighbors"]:
+#         x2, y2 = voronoi_vertices[n]["pos"]
 
-xs = [v["pos"][0] for v in voronoi_vertices]
-ys = [v["pos"][1] for v in voronoi_vertices]
+#         plt.plot([x1, x2], [y1, y2], linewidth=1)
+
+# xs = [v["pos"][0] for v in voronoi_vertices]
+# ys = [v["pos"][1] for v in voronoi_vertices]
 
 # # Hybrid Voronoi A* Path
 # if (len(hybridVoronoiAPath) > 1):
