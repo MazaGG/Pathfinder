@@ -37,48 +37,24 @@ int main(int argc, char** argv) {
     // find isolated clusters
     ConnectedComponentLabeler ccl(map, obstacles);
     vector<Point> centers = ccl.getCenters();
-
-    // TEST
     Grid clusters = ccl.getClusters();
 
     // generate voronoi diagram
     VoronoiDiagram voronoi(map, centers);
     Delaunay graph = voronoi.getGraph();
+    vector<VoronoiVertex> vertices = voronoi.getVertices();
 
-    // check if feasible
-    // DijkstraGrid path(map, start, goal);
-    // if (path.getPath().empty()) {
-    //     cout << "No path exists \n";
-    //     return 0;
-    // }
-
-
-
-    // Algorithms
-
-    // Hybrid Voronoi with A*
-    // HybridVoronoiA hybridVoronoiA(map, obstacles, start, goal);
-    // vector<Point> hybridVronoiAPath = hybridVoronoiA.getPath();
-    // vector<VoronoiVertex> graph = hybridVoronoiA.getGraph();
-    // cout << "Hybrid Voronoi with A*: " << hybridVoronoiA.getTime() << "ms | Length: " << hybridVoronoiA.getLength() << "\n";
-
-    // // A* Grid
-    // AStarGrid aStarGrid(map, start, goal);
-    // vector<Point> aStarGridPath = aStarGrid.getPath();
-    // cout << "A* Grid: " << aStarGrid.getTime() << "ms | Length: " << aStarGrid.getLength() << "\n";
-
-    // // Dijkstra
-    // DijkstraGrid dijkstraGrid(map, start, goal);
-    // vector<Point> dijkstraPath = dijkstraGrid.getPath();
-    // cout << "Dijkstra: " << dijkstraGrid.getTime() << "ms | Length: " << dijkstraGrid.getLength() << "\n";
-
-    // // BFS
-    // BFSGrid bfs(map, start, goal);
-    // vector<Point> bfsPath = bfs.getPath();
-    // cout << "Breadth First Search: " << bfs.getTime() << "ms | Length: " << bfs.getLength() << "\n";
-
-
-
+    // TEST: add one cluster (it will show wrong in the graph since I won't update the CCL for now, I just want to test update speed)
+    Point newObs = {1.0, 1.0};
+    centers.push_back(newObs);
+    map.cells[1][1] = 1;
+    voronoi.insert(map, newObs);
+    graph.clear();
+    graph = voronoi.getGraph();
+    vertices.clear();
+    vertices = voronoi.getVertices();;
+    // TEST: complete rebuild
+    VoronoiDiagram newVoronoi(map, centers);
 
     // Output for plotting
 
@@ -108,25 +84,25 @@ int main(int argc, char** argv) {
     }
     file3.close();
 
-    ofstream file4("voronoi_vertices.csv");
-    for (auto i = graph.finite_faces_begin(); i != graph.finite_faces_end(); i++) {
-        Delaunay::Face_handle face = i;
-        K::Point_2 circumcenter = graph.circumcenter(face);
-        file4 << circumcenter.x() << "," << circumcenter.y() << "\n";
-    }
-    file4.close();
-
     // ofstream file4("voronoi_vertices.csv");
-    // for (int i = 0; i < graph.size(); i++) {
-    //     file4 << graph[i].position.x << "," << graph[i].position.y << "," << "[";
-    //     for (int j = 0; j < graph[i].neighbors.size(); j++) {
-    //         file4 << graph[i].neighbors[j];
-    //         if (j < graph[i].neighbors.size() - 1) {
-    //             file4 << ";";
-    //         }
-    //     }        file4 << "]\n";
+    // for (auto i = graph.finite_faces_begin(); i != graph.finite_faces_end(); i++) {
+    //     Delaunay::Face_handle face = i;
+    //     K::Point_2 circumcenter = graph.circumcenter(face);
+    //     file4 << circumcenter.x() << "," << circumcenter.y() << "\n";
     // }
     // file4.close();
+
+    ofstream file4("voronoi_vertices.csv");
+    for (int i = 0; i < vertices.size(); i++) {
+        file4 << vertices[i].position.x << "," << vertices[i].position.y << "," << "[";
+        for (int j = 0; j < vertices[i].neighbors.size(); j++) {
+            file4 << vertices[i].neighbors[j];
+            if (j < vertices[i].neighbors.size() - 1) {
+                file4 << ";";
+            }
+        }        file4 << "]\n";
+    }
+    file4.close();
 
     ofstream file5("cluster_map.csv");
     for (int y = 0; y < clusters.height; y++) {
