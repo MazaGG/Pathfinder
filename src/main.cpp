@@ -39,12 +39,30 @@ int main(int argc, char** argv) {
     vector<Point> centers = ccl.getCenters();
     Grid clusters = ccl.getClusters();
 
+    // THROW (first call to load code and data into cache)
+    VoronoiDiagram throw_voronoi(map, centers);
+
     // generate voronoi diagram
+    cout << "\nIMPROVED VORONOI RESULTS: \n";
     VoronoiDiagram voronoi(map, centers);
     Delaunay graph = voronoi.getGraph();
     vector<VoronoiVertex> vertices = voronoi.getVertices();
+    cout << "\n";
+
+    // TEST: compare with freespace CDT (not really CDT since we didn't constraint it to free space, thus expect CDT to actually take longer):
+    cout << "TRIANGULATION ON VERTICES RESULTS: \n";
+    vector<Point> t_vertices;
+    for (int i = 0; i < obstacles.size(); i++) {
+        Obstacle obstacle = obstacles[i];
+        for (int j = 0; j < obstacle.vertices.size(); j++) {
+            t_vertices.push_back(obstacle.vertices[j]);
+        }
+    }
+    VoronoiDiagram cdt(map, t_vertices);
+    cout << "\n";
 
     // TEST: add one cluster (it will show wrong in the graph since I won't update the CCL for now, I just want to test update speed)
+    cout << "LOCAL CHANGES: \n";
     Point newObs = {1.0, 1.0};
     centers.push_back(newObs);
     map.cells[1][1] = 1;
@@ -53,8 +71,12 @@ int main(int argc, char** argv) {
     graph = voronoi.getGraph();
     vertices.clear();
     vertices = voronoi.getVertices();;
+    cout << "\n";
+
     // TEST: complete rebuild
+    cout << "COMPLETE REBUILD: \n";
     VoronoiDiagram newVoronoi(map, centers);
+    cout << "\n";
 
     // Output for plotting
 
