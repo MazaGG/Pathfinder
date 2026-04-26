@@ -41,15 +41,16 @@ class VoronoiDiagram {
         void buildVoronoiVertices(Grid& grid) {
             // maps delaunay triangle to indices for neighbor lookup in voronoi vertices
             map<Delaunay::Face_handle, int> faceIndexMap; 
-            int index = 0;
+            int faceIndex = 0;
 
             for (Delaunay::Finite_faces_iterator i = graph.finite_faces_begin(); i != graph.finite_faces_end(); ++i) {
                 K::Point_2 circumcenter = graph.circumcenter(i);
                 if (isPointInGrid(circumcenter)) { // only consider circumcenters that are within the bounding box
                     VoronoiVertex vertex;
                     vertex.position = Point{circumcenter.x(), circumcenter.y()};
+                    vertex.index = vertices.size();
                     vertices.push_back(vertex);
-                    faceIndexMap[i] = index++;
+                    faceIndexMap[i] = faceIndex++;
                 } else {
                     faceIndexMap[i] = -1; // mark as invalid
                 }
@@ -114,6 +115,7 @@ class VoronoiDiagram {
         void findSegmentInBbox(const K::Segment_2* segment, int& currentIndex, vector<pair<int, double>>& leftBoundaryVertices, vector<pair<int, double>>& topBoundaryVertices, vector<pair<int, double>>& rightBoundaryVertices, vector<pair<int, double>>& bottomBoundaryVertices) {
             VoronoiVertex boundaryVertex;
             boundaryVertex.position = Point{segment->target().x(), segment->target().y()};
+            boundaryVertex.index = vertices.size();
             boundaryVertex.neighbors.push_back(currentIndex);
             // add to vertices
             vertices.push_back(boundaryVertex);
@@ -162,6 +164,7 @@ class VoronoiDiagram {
                 if (vertices[leftBoundaryVertices.back().first].position.y != grid.height - 0.5) {
                     VoronoiVertex corner;
                     corner.position = Point{0.5, grid.height - 0.5};
+                    corner.index = vertices.size();
                     vertices.push_back(corner);
                     if (isEdgeValid(grid, vertices[leftBoundaryVertices.back().first].position, corner.position)) {
                         vertices[leftBoundaryVertices.back().first].neighbors.push_back(vertices.size() - 1);
@@ -190,6 +193,7 @@ class VoronoiDiagram {
                 if (vertices[rightBoundaryVertices[0].first].position.y != grid.height - 0.5) {
                     VoronoiVertex corner;
                     corner.position = Point{grid.width - 0.5, grid.height - 0.5};
+                    corner.index = vertices.size();
                     vertices.push_back(corner);
                     rightBoundaryVertices.insert(rightBoundaryVertices.begin(), pair(vertices.size() - 1, 0.5));
                 }
@@ -214,6 +218,7 @@ class VoronoiDiagram {
                 if (vertices[rightBoundaryVertices.back().first].position.y != 0.5) {
                     VoronoiVertex corner;
                     corner.position = Point{grid.width - 0.5, 0.5};
+                    corner.index = vertices.size();
                     vertices.push_back(corner);
                     if (isEdgeValid(grid, vertices[rightBoundaryVertices.back().first].position, corner.position)) {
                         vertices[rightBoundaryVertices.back().first].neighbors.push_back(vertices.size() - 1);
@@ -242,6 +247,7 @@ class VoronoiDiagram {
                 if (vertices[leftBoundaryVertices[0].first].position.y != 0.5) {
                     VoronoiVertex corner;
                     corner.position = Point{0.5, 0.5};
+                    corner.index = vertices.size();
                     vertices.push_back(corner);
                     if (isEdgeValid(grid, vertices[leftBoundaryVertices[0].first].position, corner.position)) {
                         corner.neighbors.push_back(leftBoundaryVertices[0].first);
@@ -266,8 +272,8 @@ class VoronoiDiagram {
             auto voronoi_start = chrono::high_resolution_clock::now();
             buildVoronoiVertices(grid);
             auto voronoi_end = chrono::high_resolution_clock::now();
-            cout << "Delaunay Computation Time: " << chrono::duration_cast<chrono::microseconds>(graph_end - graph_start).count() << "us\n";
-            cout << "Vertices Mapping Time: " << chrono::duration_cast<chrono::microseconds>(voronoi_end - voronoi_start).count() << "us\n";
+            cout << "Delaunay Computation Time: " << chrono::duration_cast<chrono::milliseconds>(graph_end - graph_start).count() << "ms\n";
+            cout << "Vertices Mapping Time: " << chrono::duration_cast<chrono::milliseconds>(voronoi_end - voronoi_start).count() << "ms\n";
         }
 
         Delaunay getGraph() {

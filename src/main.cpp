@@ -5,7 +5,9 @@
 #include "algorithm/obstacleGenerator.hpp"
 #include "algorithm/occupancyMapGenerator.hpp"
 #include "algorithm/connectedComponentLabeler.hpp"
+#include "algorithm/floodfill.hpp"
 #include "algorithm/voronoiDiagram.hpp"
+#include "algorithm/pathfinder.hpp"
 #include "benchmark/astar.hpp"
 #include "benchmark/dijkstra.hpp"
 #include "benchmark/bfs.hpp"
@@ -39,18 +41,30 @@ int main(int argc, char** argv) {
     vector<Point> centers = ccl.getCenters();
     Grid clusters = ccl.getClusters();
 
+    // flood fill the map
+    FloodFill flood(map, start);
+    Grid reachable = flood.getGrid();
+
     // THROW (first call to load code and data into cache)
-    VoronoiDiagram throw_voronoi(map, centers);
+    VoronoiDiagram throw_voronoi(reachable, centers);
 
     // generate voronoi diagram
     cout << "\nIMPROVED VORONOI RESULTS: \n";
-    VoronoiDiagram voronoi(map, centers);
+    VoronoiDiagram voronoi(reachable, centers);
     Delaunay graph = voronoi.getGraph();
     vector<VoronoiVertex> vertices = voronoi.getVertices();
     cout << "\n";
 
+    // find path
+    Pathfinder throw_hybrid(reachable, start, goal, vertices); // throw
+    auto start_time = high_resolution_clock::now();
+    Pathfinder hybrid(reachable, start, goal, vertices);
+    auto end_time = high_resolution_clock::now();
+    cout << "Pathfinding time: " << duration_cast<milliseconds>(end_time - start_time).count() << "ms\n";
+    vector<Point> hybrid_path = hybrid.getPath();
+
     // TEST: compare with freespace CDT (not really CDT since we didn't constraint it to free space, thus expect CDT to actually take longer):
-    cout << "TRIANGULATION ON VERTICES RESULTS: \n";
+    cout << "\nTRIANGULATION ON VERTICES RESULTS: \n";
     vector<Point> t_vertices;
     for (int i = 0; i < obstacles.size(); i++) {
         Obstacle obstacle = obstacles[i];
@@ -58,25 +72,41 @@ int main(int argc, char** argv) {
             t_vertices.push_back(obstacle.vertices[j]);
         }
     }
-    VoronoiDiagram cdt(map, t_vertices);
+    VoronoiDiagram cdt(reachable, t_vertices);
     cout << "\n";
 
-    // TEST: add one cluster (it will show wrong in the graph since I won't update the CCL for now, I just want to test update speed)
-    cout << "LOCAL CHANGES: \n";
-    Point newObs = {1.0, 1.0};
-    centers.push_back(newObs);
-    map.cells[1][1] = 1;
-    voronoi.insert(map, newObs);
-    graph.clear();
-    graph = voronoi.getGraph();
-    vertices.clear();
-    vertices = voronoi.getVertices();;
-    cout << "\n";
+    // // TEST: add one cluster (it will show wrong in the graph since I won't update the CCL for now, I just want to test update speed)
+    // cout << "LOCAL CHANGES: \n";
+    // Point newObs = {1.0, 1.0};
+    // centers.push_back(newObs);
+    // map.cells[1][1] = 1;
+    // voronoi.insert(map, newObs);
+    // graph.clear();
+    // graph = voronoi.getGraph();
+    // vertices.clear();
+    // vertices = voronoi.getVertices();;
+    // cout << "\n";
 
-    // TEST: complete rebuild
-    cout << "COMPLETE REBUILD: \n";
-    VoronoiDiagram newVoronoi(map, centers);
-    cout << "\n";
+    // // TEST: complete rebuild
+    // cout << "COMPLETE REBUILD: \n";
+    // VoronoiDiagram newVoronoi(map, centers);
+    // cout << "\n";
+
+    // astar path
+    Astar throw_astar(reachable, start, goal);
+    auto astar_start = high_resolution_clock::now();
+    Astar astar(reachable, start, goal);
+    auto astar_end = high_resolution_clock::now();
+    vector<Point> astar_path = astar.getPath();
+    cout << "\nAstar Time: " << duration_cast<milliseconds>(astar_end - astar_start).count() << "ms\n";
+
+    // bfs path
+    BFS throw_bfs(reachable, start, goal);
+    auto bfs_start = high_resolution_clock::now();
+    BFS bfs(reachable, start, goal);
+    auto bfs_end = high_resolution_clock::now();
+    vector<Point> bfs_path = bfs.getPath();
+    cout << "\nBFS Time: " << duration_cast<milliseconds>(bfs_end - bfs_start).count() << "ms\n";
 
     // Output for plotting
 
@@ -135,17 +165,17 @@ int main(int argc, char** argv) {
     }
     file5.close();
 
-    // ofstream file4("hybridVoronoiAPath.csv");
-    // for (int i = 0; i < hybridVronoiAPath.size(); i++) {
-    //     file4 << hybridVronoiAPath[i].x << "," << hybridVronoiAPath[i].y << "\n";
-    // }
-    // file4.close();
+    ofstream file6("hybrid_path.csv");
+    for (int i = 0; i < hybrid_path.size(); i++) {
+        file6 << hybrid_path[i].x << "," << hybrid_path[i].y << "\n";
+    }
+    file6.close();
 
-    // ofstream file5("aStarGridPath.csv");
-    // for (int i = 0; i < aStarGridPath.size(); i++) {
-    //     file5 << aStarGridPath[i].x << "," << aStarGridPath[i].y << "\n";
-    // }
-    // file5.close();
+    ofstream file7("astar_path.csv");
+    for (int i = 0; i < astar_path.size(); i++) {
+        file7 << astar_path[i].x << "," << astar_path[i].y << "\n";
+    }
+    file7.close();
 
     // ofstream file6("dijkstraPath.csv");
     // for (int i = 0; i < dijkstraPath.size(); i++) {
@@ -153,11 +183,11 @@ int main(int argc, char** argv) {
     // }
     // file6.close();
 
-    // ofstream file7("bfsPath.csv");
-    // for (int i = 0; i < bfsPath.size(); i++) {
-    //     file7 << bfsPath[i].x << "," << bfsPath[i].y << "\n";
-    // }
-    // file7.close();
+    ofstream file8("bfs_path.csv");
+    for (int i = 0; i < bfs_path.size(); i++) {
+        file8 << bfs_path[i].x << "," << bfs_path[i].y << "\n";
+    }
+    file8.close();
 
     return 0;
 

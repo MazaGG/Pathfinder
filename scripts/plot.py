@@ -58,19 +58,19 @@ with open("voronoi_vertices.csv") as f:
             "neighbors": neighbors
         })
 
-# # Load Hybrid Voronoi A* path
-# hybridVoronoiAPath = []
-# with open("hybridVoronoiAPath.csv") as f:
-#     for line in f:
-#         x, y = map(float, line.strip().split(","))
-#         hybridVoronoiAPath.append((x, y))
+# Load Hybrid Voronoi A* path
+hybrid_path = []
+with open("hybrid_path.csv") as f:
+    for line in f:
+        x, y = map(float, line.strip().split(","))
+        hybrid_path.append((x, y))
 
-# # A* path
-# aStarGridPath = []
-# with open("aStarGridPath.csv") as f:
-#     for line in f:
-#         x, y = map(float, line.strip().split(","))
-#         aStarGridPath.append((x, y))
+# A* path
+astar_path = []
+with open("astar_path.csv") as f:
+    for line in f:
+        x, y = map(float, line.strip().split(","))
+        astar_path.append((x, y))
 
 # # A* path
 # dijkstraPath = []
@@ -79,14 +79,12 @@ with open("voronoi_vertices.csv") as f:
 #         x, y = map(float, line.strip().split(","))
 #         dijkstraPath.append((x, y))
 
-# # BFS path
-# bfsPath = []
-# with open("bfsPath.csv") as f:
-#     for line in f:
-#         x, y = map(float, line.strip().split(","))
-#         bfsPath.append((x, y))
-
-
+# BFS path
+bfs_path = []
+with open("bfs_path.csv") as f:
+    for line in f:
+        x, y = map(float, line.strip().split(","))
+        bfs_path.append((x, y))
 
 # Plotting
 plt.imshow(
@@ -118,17 +116,17 @@ for i, v in enumerate(voronoi_vertices):
 xs = [v["pos"][0] for v in voronoi_vertices]
 ys = [v["pos"][1] for v in voronoi_vertices]
 
-# # Hybrid Voronoi A* Path
-# if (len(hybridVoronoiAPath) > 1):
-#     path_xs = [p[0] for p in hybridVoronoiAPath]
-#     path_ys = [p[1] for p in hybridVoronoiAPath]
-#     plt.plot(path_xs, path_ys, color="blue", linewidth=2, label="Hybrid Voronoi A*")
+# Hybrid Voronoi A* Path
+if (len(hybrid_path) > 1):
+    path_xs = [p[0] for p in hybrid_path]
+    path_ys = [p[1] for p in hybrid_path]
+    plt.plot(path_xs, path_ys, color="blue", linewidth=2, label="Hybrid Voronoi A*")
 
-# # A* Grid Path
-# if (len(aStarGridPath) > 1):
-#     path_xs = [p[0] for p in aStarGridPath]
-#     path_ys = [p[1] for p in aStarGridPath]
-#     plt.plot(path_xs, path_ys, color="red", linewidth=2, label="A* Grid")
+# A* Grid Path
+if (len(astar_path) > 1):
+    path_xs = [p[0] for p in astar_path]
+    path_ys = [p[1] for p in astar_path]
+    plt.plot(path_xs, path_ys, color="red", linewidth=2, label="A* Grid")
 
 # # Dijkstra Path
 # if (len(dijkstraPath) > 1):
@@ -136,13 +134,11 @@ ys = [v["pos"][1] for v in voronoi_vertices]
 #     path_ys = [p[1] for p in dijkstraPath]
 #     plt.plot(path_xs, path_ys, color="green", linewidth=2, label="Dijkstra")
 
-# # BFS Path
-# if (len(bfsPath) > 1):
-#     path_xs = [p[0] for p in bfsPath]
-#     path_ys = [p[1] for p in bfsPath]
-#     plt.plot(path_xs, path_ys, color="orange", linewidth=2, label="BFS")
-
-
+# BFS Path
+if (len(bfs_path) > 1):
+    path_xs = [p[0] for p in bfs_path]
+    path_ys = [p[1] for p in bfs_path]
+    plt.plot(path_xs, path_ys, color="orange", linewidth=2, label="BFS")
 
 # Config
 plt.gca().set_aspect('equal')

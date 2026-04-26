@@ -1,149 +1,98 @@
 #pragma once
 #include <vector>
-#include <queue>
-#include <algorithm>
 #include <chrono>
 #include "../helpers/struct.hpp"
 #include "../helpers/function.hpp"
 
-using namespace std;
-using namespace std::chrono;
+class BFS {
 
-/*
-    BFS Grid Traversal
-    - 4-direction movement
-    - uniform cost grid (shortest path guaranteed)
-*/
+    private:
+        vector<Point> path;
+        vector<vector<BFSNode>> bfsGrid;
+        vector<pair<int,int>> directions = {{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1}};
 
-class BFSGrid {
-private:
-    vector<Point> path;
-    double elapsedTime;   // milliseconds
-    double pathLength;    // number of moves
+        void findPath(const Grid& grid, const Point& start, const Point& goal) {
+            priority_queue<BFSNode, vector<BFSNode>, greater<BFSNode>> openList;
+            bfsGrid[(int)start.y][(int)start.x].x = (int)start.x;
+            bfsGrid[(int)start.y][(int)start.x].y = (int)start.y;
+            bfsGrid[(int)start.y][(int)start.x].gscore = 0;
+            openList.push(bfsGrid[(int)start.y][(int)start.x]);
+            double moveCost = 1;
+            bool goalReached = false;
+            pair<int,int> endIndex = {-1,-1};
 
-public:
-    BFSGrid(const Grid& grid, const Point& start, const Point& goal) {
-        solve(grid, start, goal);
-    }
+            while (!openList.empty()) {
+                BFSNode current = openList.top();
+                openList.pop();
 
-    void solve(const Grid& grid, const Point& start, const Point& goal) {
-        auto begin = high_resolution_clock::now();
+                if (bfsGrid[current.y][current.x].isClosed) {
+                    continue;
+                }
+                bfsGrid[current.y][current.x].isClosed = true;
 
-        path.clear();
-        elapsedTime = 0.0;
-        pathLength = 0.0;
+                if (isEdgeValid(grid, Point{(double)current.x, (double)current.y}, goal)) {
+                    goalReached = true;
+                    endIndex = {current.x, current.y};
+                    break;
+                }
 
-        int width  = (int)grid.width;
-        int height = (int)grid.height;
+                for (int i = 0; i < directions.size(); i++) {
+                    int x = current.x + directions[i].first;
+                    int y = current.y + directions[i].second;
+                    moveCost = 1;
 
-        int sx = (int)start.x;
-        int sy = (int)start.y;
-        int gx = (int)goal.x;
-        int gy = (int)goal.y;
+                    if (x < 0 || x >= grid.width || y < 0 || y >= grid.height) {
+                        continue;
+                    }
 
-        // invalid checks
-        if (sx < 0 || sx >= width || sy < 0 || sy >= height ||
-            gx < 0 || gx >= width || gy < 0 || gy >= height ||
-            grid.cells[sy][sx] == 1 ||
-            grid.cells[gy][gx] == 1) {
+                    if (grid.cells[y][x] == 1) {
+                        continue;
+                    }
 
-            auto end = high_resolution_clock::now();
-            elapsedTime =
-                duration<double, milli>(end - begin).count();
-            return;
-        }
+                    if (directions[i].first != 0 && directions[i].second != 0) {
+                        if (grid.cells[current.y][current.x + directions[i].first] == 1 && grid.cells[current.y + directions[i].second][current.x] == 1) {
+                            continue;
+                        }
+                        moveCost = 1.414;
+                    }
 
-        vector<vector<AstarCell>> state(
-            height,
-            vector<AstarCell>(width)
-        );
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                state[y][x].isClose = false;
-                state[y][x].gScore = 0.0;
-                state[y][x].parent = {-1, -1};
-            }
-        }
-
-        queue<pair<int,int>> q;
-
-        q.push({sx, sy});
-        state[sy][sx].isClose = true;
-
-        int dx[4] = {1, -1, 0, 0};
-        int dy[4] = {0, 0, 1, -1};
-
-        bool found = false;
-
-        while (!q.empty()) {
-            auto [x, y] = q.front();
-            q.pop();
-
-            if (x == gx && y == gy) {
-                found = true;
-                break;
+                    double gscore = current.gscore + moveCost;
+                    if (gscore < bfsGrid[y][x].gscore) {
+                        bfsGrid[y][x].x = x;
+                        bfsGrid[y][x].y = y;
+                        bfsGrid[y][x].gscore = gscore;
+                        bfsGrid[y][x].parentX = current.x;
+                        bfsGrid[y][x].parentY = current.y;
+                        openList.push(bfsGrid[y][x]);
+                    }
+                }
             }
 
-            for (int i = 0; i < 4; i++) {
-                int nx = x + dx[i];
-                int ny = y + dy[i];
-
-                if (nx < 0 || nx >= width ||
-                    ny < 0 || ny >= height)
-                    continue;
-
-                if (grid.cells[ny][nx] == 1)
-                    continue;
-
-                if (state[ny][nx].isClose)
-                    continue;
-
-                state[ny][nx].isClose = true;
-                state[ny][nx].parent = {x, y};
-
-                q.push({nx, ny});
-            }
-        }
-
-        if (found) {
-            int cx = gx;
-            int cy = gy;
-
-            while (!(cx == -1 && cy == -1)) {
-                path.push_back({
-                    (double)cx,
-                    (double)cy
-                });
-
-                pair<int,int> p =
-                    state[cy][cx].parent;
-
-                cx = p.first;
-                cy = p.second;
+            if (goalReached) {
+                int x = endIndex.first;
+                int y = endIndex.second;
+                while (x != -1 && y != -1) {
+                    path.push_back({(double)x, (double)y});
+                    int next_x = bfsGrid[y][x].parentX;
+                    int next_y = bfsGrid[y][x].parentY;
+                    x = next_x;
+                    y = next_y;
+                }
             }
 
             reverse(path.begin(), path.end());
+            path.push_back(goal);
+        }
+    
+    public:
 
-            if (path.size() > 1)
-                pathLength =
-                    (double)path.size() - 1.0;
+        BFS(Grid& grid, Point& start, Point& goal) {
+            this->bfsGrid.resize(grid.height, vector<BFSNode>(grid.width));
+            findPath(grid, start, goal);
         }
 
-        auto end = high_resolution_clock::now();
-        elapsedTime =
-            duration<double, milli>(end - begin).count();
-    }
-
-    vector<Point> getPath() const {
-        return path;
-    }
-
-    double getTime() const {
-        return elapsedTime;
-    }
-
-    double getLength() const {
-        return pathLength;
-    }
+        vector<Point> getPath() {
+            return path;
+        }
+    
 };
