@@ -54,14 +54,14 @@ struct AstarNode {
     }
 };
 
-struct BFSNode {
+struct DJKNode {
     int x, y;
     int parentX = -1;
     int parentY = -1;
     bool isClosed = false;
     double gscore = numeric_limits<double>::infinity();
 
-    bool operator > (const BFSNode& other) const {
+    bool operator > (const DJKNode& other) const {
         return gscore > other.gscore;
     }
 };

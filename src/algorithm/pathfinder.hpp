@@ -118,9 +118,6 @@ class Pathfinder {
         }
 
         void findPath(const Grid& grid, const Point& start, const Point& goal, vector<VoronoiVertex>& vertices) {
-
-            auto global_start = chrono::high_resolution_clock::now();
-
             int start_index = -1;
             int goal_index = -1;
             double bestStart = numeric_limits<double>::infinity();
@@ -186,13 +183,7 @@ class Pathfinder {
                 }
             }
 
-            auto global_end = chrono::high_resolution_clock::now();
-            cout << "Global Path Time: " << chrono::duration_cast<chrono::milliseconds>(global_end - global_start).count() << "ms\n";
-
-            auto local_start = chrono::high_resolution_clock::now();
             buildPath(grid, endIndex, start, goal, vertices);
-            auto local_end = chrono::high_resolution_clock::now();
-            cout << "Local Refinement Time: " << chrono::duration_cast<chrono::milliseconds>(local_end - local_start).count() << "ms\n";
         }
 
         void buildPath (const Grid& grid, const int& endIndex, const Point& start, const Point& goal, const vector<VoronoiVertex>& vertices) {
@@ -205,19 +196,14 @@ class Pathfinder {
                     nextPoint = findNearestFreeCell(grid, nextPoint, goal);
                 }                
 
-                auto segmentTime_start = chrono::high_resolution_clock::now();
                 Point segment_end = getTraversable(grid, nextPoint, path.back());
-                auto segmentTime_end = chrono::high_resolution_clock::now();
-                cout << "Segment[" << i << "]" << "Time: " << chrono::duration_cast<chrono::milliseconds>(segmentTime_end - segmentTime_start).count() << "ms\n";
+                
                 if (segment_end == path.back()) {
                     path.push_back(nextPoint);
                 }
                 else {
                     // Refactor: it's possible that the voronoi vertex itself is inside the obstacle, and in some cases, the whole edge could be inside the obstacle
-                    auto astar_start = chrono::high_resolution_clock::now();
                     astar(grid, segment_end, path.back(), path);
-                    auto astar_end = chrono::high_resolution_clock::now();
-                    cout << "Astar[" << i << "]" << "Time: " << chrono::duration_cast<chrono::milliseconds>(astar_end - astar_start).count() << "ms\n";
                     path.push_back(nextPoint);
                 }
             }

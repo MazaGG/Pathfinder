@@ -117,20 +117,26 @@ class VoronoiDiagram {
             boundaryVertex.position = Point{segment->target().x(), segment->target().y()};
             boundaryVertex.index = vertices.size();
             boundaryVertex.neighbors.push_back(currentIndex);
-            // add to vertices
+            
             vertices.push_back(boundaryVertex);
-            // add neighbor relationship to current vertex
             vertices[currentIndex].neighbors.push_back(vertices.size() - 1);
-            // add in boundary vertices
-            if (segment->target().x() == 0.5) {
-                leftBoundaryVertices.push_back({vertices.size() - 1, segment->target().y()});
-            } else if (segment->target().x() == bbox.xmax()) {
-                rightBoundaryVertices.push_back({vertices.size() - 1, bbox.ymax() - segment->target().y()});
-            } else if (segment->target().y() == 0.5) {
-                bottomBoundaryVertices.push_back({vertices.size() - 1, bbox.xmax() - segment->target().x()});
-            } else if (segment->target().y() == bbox.ymax()) {
-                topBoundaryVertices.push_back({vertices.size() - 1, segment->target().x()});
+            
+            double margin = 1e-6;
+            double x = segment->target().x();
+            double y = segment->target().y();
+            
+            // Use epsilon comparisons!
+            if (abs(x - 0.5) < margin) {
+                leftBoundaryVertices.push_back({vertices.size() - 1, y});
+            } else if (abs(x - bbox.xmax()) < margin) {
+                rightBoundaryVertices.push_back({vertices.size() - 1, bbox.ymax() - y});
+            } else if (abs(y - 0.5) < margin) {
+                bottomBoundaryVertices.push_back({vertices.size() - 1, bbox.xmax() - x});
+            } else if (abs(y - bbox.ymax()) < margin) {
+                topBoundaryVertices.push_back({vertices.size() - 1, x});
             }
+            // If none match, the vertex isn't on a boundary — it's still added to vertices
+            // but not to any boundary list
         }
 
         void connectBorderVertices(Grid& grid, vector<pair<int, double>>& leftBoundaryVertices, vector<pair<int, double>>& topBoundaryVertices, vector<pair<int, double>>& rightBoundaryVertices, vector<pair<int, double>>& bottomBoundaryVertices) {
@@ -250,10 +256,10 @@ class VoronoiDiagram {
                     corner.index = vertices.size();
                     vertices.push_back(corner);
                     if (isEdgeValid(grid, vertices[leftBoundaryVertices[0].first].position, corner.position)) {
-                        corner.neighbors.push_back(leftBoundaryVertices[0].first);
+                        vertices.back().neighbors.push_back(leftBoundaryVertices[0].first);
                         vertices[leftBoundaryVertices[0].first].neighbors.push_back(vertices.size() - 1);
                     }
-                    leftBoundaryVertices.insert(leftBoundaryVertices.begin(), pair(vertices.size() - 1, 0.5));
+                    leftBoundaryVertices.insert(leftBoundaryVertices.begin(), pair(corner.index, 0.5));
                 }
                 if (isEdgeValid(grid, vertices[bottomBoundaryVertices.back().first].position, vertices[leftBoundaryVertices[0].first].position)) {
                     vertices[bottomBoundaryVertices.back().first].neighbors.push_back(leftBoundaryVertices[0].first);
@@ -272,8 +278,6 @@ class VoronoiDiagram {
             auto voronoi_start = chrono::high_resolution_clock::now();
             buildVoronoiVertices(grid);
             auto voronoi_end = chrono::high_resolution_clock::now();
-            cout << "Delaunay Computation Time: " << chrono::duration_cast<chrono::milliseconds>(graph_end - graph_start).count() << "ms\n";
-            cout << "Vertices Mapping Time: " << chrono::duration_cast<chrono::milliseconds>(voronoi_end - voronoi_start).count() << "ms\n";
         }
 
         Delaunay getGraph() {
@@ -304,8 +308,6 @@ class VoronoiDiagram {
             vertices.clear();
             buildVoronoiVertices(grid);
             auto voronoi_end = chrono::high_resolution_clock::now();
-            cout << "Delaunay Computation Time: " << chrono::duration_cast<chrono::microseconds>(graph_end - graph_start).count() << "us\n";
-            cout << "Vertices Mapping Time: " << chrono::duration_cast<chrono::microseconds>(voronoi_end - voronoi_start).count() << "us\n";
         }
 
         void remove(Grid& grid, Point& remove) {

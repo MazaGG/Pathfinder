@@ -162,9 +162,7 @@ double computePathLength(const vector<Point>& path) {
     double len = 0.0;
 
     for (int i = 1; i < path.size(); i++) {
-        double dx = path[i].x - path[i - 1].x;
-        double dy = path[i].y - path[i - 1].y;
-        len += sqrt(dx * dx + dy * dy);
+        len += distance(path[i-1], path[i]);
     }
 
     return len;

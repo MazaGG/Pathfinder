@@ -6,11 +6,9 @@
 #include "algorithm/occupancyMapGenerator.hpp"
 #include "algorithm/connectedComponentLabeler.hpp"
 #include "algorithm/floodfill.hpp"
-#include "algorithm/voronoiDiagram.hpp"
-#include "algorithm/pathfinder.hpp"
+#include "algorithm/_index.hpp"
 #include "benchmark/astar.hpp"
 #include "benchmark/dijkstra.hpp"
-#include "benchmark/bfs.hpp"
 using namespace std;
 using namespace chrono;
 
@@ -45,35 +43,52 @@ int main(int argc, char** argv) {
     FloodFill flood(map, start);
     Grid reachable = flood.getGrid();
 
-    // THROW (first call to load code and data into cache)
-    VoronoiDiagram throw_voronoi(reachable, centers);
-
-    // generate voronoi diagram
-    cout << "\nIMPROVED VORONOI RESULTS: \n";
-    VoronoiDiagram voronoi(reachable, centers);
-    Delaunay graph = voronoi.getGraph();
-    vector<VoronoiVertex> vertices = voronoi.getVertices();
-    cout << "\n";
-
-    // find path
-    Pathfinder throw_hybrid(reachable, start, goal, vertices); // throw
-    auto start_time = high_resolution_clock::now();
-    Pathfinder hybrid(reachable, start, goal, vertices);
-    auto end_time = high_resolution_clock::now();
-    cout << "Pathfinding time: " << duration_cast<milliseconds>(end_time - start_time).count() << "ms\n";
-    vector<Point> hybrid_path = hybrid.getPath();
-
-    // TEST: compare with freespace CDT (not really CDT since we didn't constraint it to free space, thus expect CDT to actually take longer):
-    cout << "\nTRIANGULATION ON VERTICES RESULTS: \n";
-    vector<Point> t_vertices;
-    for (int i = 0; i < obstacles.size(); i++) {
-        Obstacle obstacle = obstacles[i];
-        for (int j = 0; j < obstacle.vertices.size(); j++) {
-            t_vertices.push_back(obstacle.vertices[j]);
-        }
+    // check if generated map is feasible
+    if (reachable.cells[(int)goal.y][(int)goal.x] == 1 || map.cells[(int)start.y][(int)start.x] == 1) {
+        cout << "\nNO PATH EXISTS\n";
+        return 0;
     }
-    VoronoiDiagram cdt(reachable, t_vertices);
-    cout << "\n";
+
+
+
+    // ALGORITHMS
+
+    // Hybrid Voronoi A*
+    HybridVoronoiA throw_hybrid(reachable, centers, start, goal);
+    HybridVoronoiA hybrid(reachable, centers, start, goal);
+    vector<VoronoiVertex> vertices = hybrid.getVertices();
+    vector<Point> hybrid_path = hybrid.getPath();
+    cout << "\nHYBRID VORONOI A*: \n";
+    cout << "time: " << hybrid.getTime() << " ms\n";
+    cout << "length: " << hybrid.getLength() << " units\n";
+
+    // A*
+    Astar throw_astar(reachable, start, goal);
+    Astar astar(reachable, start, goal);
+    vector<Point> astar_path = astar.getPath();
+    cout << "\nA*: \n";
+    cout << "time: " << astar.getTime() << " ms\n";
+    cout << "length: " << astar.getLength() << " units\n"; 
+
+    // Dijkstra
+    Dijkstra throw_djk(reachable, start, goal);
+    Dijkstra djk(reachable, start, goal);
+    vector<Point> djk_path = djk.getPath();
+    cout << "\nDIJKSTRA*: \n";
+    cout << "time: " << djk.getTime() << " ms\n";
+    cout << "length: " << djk.getLength() << " units\n"; 
+
+    // // TEST: compare with freespace CDT (not really CDT since we didn't constraint it to free space, thus expect CDT to actually take longer):
+    // cout << "\nTRIANGULATION ON VERTICES RESULTS: \n";
+    // vector<Point> t_vertices;
+    // for (int i = 0; i < obstacles.size(); i++) {
+    //     Obstacle obstacle = obstacles[i];
+    //     for (int j = 0; j < obstacle.vertices.size(); j++) {
+    //         t_vertices.push_back(obstacle.vertices[j]);
+    //     }
+    // }
+    // VoronoiDiagram cdt(reachable, t_vertices);
+    // cout << "\n";
 
     // // TEST: add one cluster (it will show wrong in the graph since I won't update the CCL for now, I just want to test update speed)
     // cout << "LOCAL CHANGES: \n";
@@ -92,21 +107,9 @@ int main(int argc, char** argv) {
     // VoronoiDiagram newVoronoi(map, centers);
     // cout << "\n";
 
-    // astar path
-    Astar throw_astar(reachable, start, goal);
-    auto astar_start = high_resolution_clock::now();
-    Astar astar(reachable, start, goal);
-    auto astar_end = high_resolution_clock::now();
-    vector<Point> astar_path = astar.getPath();
-    cout << "\nAstar Time: " << duration_cast<milliseconds>(astar_end - astar_start).count() << "ms\n";
 
-    // bfs path
-    BFS throw_bfs(reachable, start, goal);
-    auto bfs_start = high_resolution_clock::now();
-    BFS bfs(reachable, start, goal);
-    auto bfs_end = high_resolution_clock::now();
-    vector<Point> bfs_path = bfs.getPath();
-    cout << "\nBFS Time: " << duration_cast<milliseconds>(bfs_end - bfs_start).count() << "ms\n";
+
+
 
     // Output for plotting
 
@@ -135,14 +138,6 @@ int main(int argc, char** argv) {
         file3 << centers[i].x << "," << centers[i].y << "\n";
     }
     file3.close();
-
-    // ofstream file4("voronoi_vertices.csv");
-    // for (auto i = graph.finite_faces_begin(); i != graph.finite_faces_end(); i++) {
-    //     Delaunay::Face_handle face = i;
-    //     K::Point_2 circumcenter = graph.circumcenter(face);
-    //     file4 << circumcenter.x() << "," << circumcenter.y() << "\n";
-    // }
-    // file4.close();
 
     ofstream file4("voronoi_vertices.csv");
     for (int i = 0; i < vertices.size(); i++) {
@@ -177,15 +172,9 @@ int main(int argc, char** argv) {
     }
     file7.close();
 
-    // ofstream file6("dijkstraPath.csv");
-    // for (int i = 0; i < dijkstraPath.size(); i++) {
-    //     file6 << dijkstraPath[i].x << "," << dijkstraPath[i].y << "\n";
-    // }
-    // file6.close();
-
-    ofstream file8("bfs_path.csv");
-    for (int i = 0; i < bfs_path.size(); i++) {
-        file8 << bfs_path[i].x << "," << bfs_path[i].y << "\n";
+    ofstream file8("djk_path.csv");
+    for (int i = 0; i <djk_path.size(); i++) {
+        file8 << djk_path[i].x << "," << djk_path[i].y << "\n";
     }
     file8.close();
 

@@ -2,42 +2,45 @@
 #include <chrono>
 #include "voronoiDiagram.hpp"
 #include "pathfinder.hpp"
+#include "pathOptimization.hpp"
 using namespace std;
 using namespace chrono;
 
 class HybridVoronoiA {
 
     private:
-        vector<VoronoiVertex> graph;
         vector<Point> path;
-        long time;
+        vector<VoronoiVertex> vertices;
+        double time;
         double length;
 
     public:
-        HybridVoronoiA(Grid& grid, vector<Obstacle>& obstacles, Point& start, Point& goal) {
+        HybridVoronoiA(Grid& grid, vector<Point>& centers, Point& start, Point& goal) {
             auto time_start = high_resolution_clock::now();
-            VoronoiDiagram voronoiDiagram(obstacles, grid);
-            this->graph = voronoiDiagram.getVertices();
-            Pathfinder voronoiAstar(grid, graph, start, goal);
-            this->path = voronoiAstar.findPath();
+            VoronoiDiagram voronoiDiagram(grid, centers);
+            this->vertices = voronoiDiagram.getVertices();
+            Pathfinder voronoiAstar(grid, start, goal, vertices);
+            vector<Point> temp_path = voronoiAstar.getPath();
+            PathOptimization optimize(grid, temp_path);
+            this->path = optimize.getPath();
             auto time_end = high_resolution_clock::now();
             this->time = duration_cast<milliseconds>(time_end - time_start).count();
+            this->length = computePathLength(path);
         }
 
-        vector<VoronoiVertex> getGraph() {
-            return graph;
+        vector<VoronoiVertex> getVertices() {
+            return vertices;
         }
 
         vector<Point> getPath() {
             return path;
         }
 
-        long getTime() {
+        double getTime() {
             return time;
         }
 
         double getLength() {
-            length = computePathLength(path);
             return length;
         }
 };

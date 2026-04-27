@@ -14,7 +14,7 @@ class FloodFill {
         void floodFill(const Grid& grid, const Point& start) {
             int start_x = (int)start.x;
             int start_y = (int)start.y;
-            reachable.cells[start_y][start_x];
+            reachable.cells[start_y][start_x] = 0;
 
             queue<pair<int,int>> queue;
             queue.push({start_x,start_y});

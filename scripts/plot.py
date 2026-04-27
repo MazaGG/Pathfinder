@@ -30,12 +30,6 @@ with open("cluster_centers.csv") as f:
 
 
 # Load voronoi vertices
-# voronoi_vertices = []
-# with open("voronoi_vertices.csv") as f:
-#     for line in f:
-#         x, y = map(float, line.strip().split(","))
-#         voronoi_vertices.append((x,y))
-
 voronoi_vertices = []
 with open("voronoi_vertices.csv") as f:
     for line in f:
@@ -58,6 +52,11 @@ with open("voronoi_vertices.csv") as f:
             "neighbors": neighbors
         })
 
+
+
+
+# LOAD PATHS
+
 # Load Hybrid Voronoi A* path
 hybrid_path = []
 with open("hybrid_path.csv") as f:
@@ -72,21 +71,19 @@ with open("astar_path.csv") as f:
         x, y = map(float, line.strip().split(","))
         astar_path.append((x, y))
 
-# # A* path
-# dijkstraPath = []
-# with open("dijkstraPath.csv") as f:
-#     for line in f:
-#         x, y = map(float, line.strip().split(","))
-#         dijkstraPath.append((x, y))
-
-# BFS path
-bfs_path = []
-with open("bfs_path.csv") as f:
+# Dijkstra path
+djk_path = []
+with open("djk_path.csv") as f:
     for line in f:
         x, y = map(float, line.strip().split(","))
-        bfs_path.append((x, y))
+        djk_path.append((x, y))
 
-# Plotting
+
+
+
+
+# PLOTTING
+
 plt.imshow(
     occupancy,
     cmap="gray_r",
@@ -97,13 +94,10 @@ plt.imshow(
 for poly in polygons:
     xs = [p[0] for p in poly] + [poly[0][0]]
     ys = [p[1] for p in poly] + [poly[0][1]]
-    plt.plot(xs, ys, color="red", linewidth=1.5)
+    plt.plot(xs, ys, color="black", linewidth=1)
 
-centers_x, centers_y = zip(*cluster_centers)
-plt.scatter(centers_x, centers_y, c='red', marker='o', label="Cluster Centers")
-
-# voronoi_x, voronoi_y = zip(*voronoi_vertices)
-# plt.scatter(voronoi_x, voronoi_y, c='blue', marker='o', label="Voronoi Vertices")
+# centers_x, centers_y = zip(*cluster_centers)
+# plt.scatter(centers_x, centers_y, c='orange', marker='o', label="Cluster Centers")
 
 for i, v in enumerate(voronoi_vertices):
     x1, y1 = v["pos"]
@@ -128,17 +122,11 @@ if (len(astar_path) > 1):
     path_ys = [p[1] for p in astar_path]
     plt.plot(path_xs, path_ys, color="red", linewidth=2, label="A* Grid")
 
-# # Dijkstra Path
-# if (len(dijkstraPath) > 1):
-#     path_xs = [p[0] for p in dijkstraPath]
-#     path_ys = [p[1] for p in dijkstraPath]
-#     plt.plot(path_xs, path_ys, color="green", linewidth=2, label="Dijkstra")
-
-# BFS Path
-if (len(bfs_path) > 1):
-    path_xs = [p[0] for p in bfs_path]
-    path_ys = [p[1] for p in bfs_path]
-    plt.plot(path_xs, path_ys, color="orange", linewidth=2, label="BFS")
+# Dijkstra Path
+if (len(djk_path) > 1):
+    path_xs = [p[0] for p in djk_path]
+    path_ys = [p[1] for p in djk_path]
+    plt.plot(path_xs, path_ys, color="green", linewidth=2, label="Dijkstra")
 
 # Config
 plt.gca().set_aspect('equal')

@@ -3,6 +3,8 @@
 #include <chrono>
 #include "../helpers/struct.hpp"
 #include "../helpers/function.hpp"
+using namespace std;
+using namespace chrono;
 
 struct Node {
     int x, y;
@@ -23,6 +25,8 @@ class Astar {
         vector<Point> path;
         vector<vector<Node>> astarGrid;
         vector<pair<int,int>> directions = {{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1}};
+        double time;
+        double length;
 
         void findPath(const Grid& grid, const Point& start, const Point& goal) {
             priority_queue<Node, vector<Node>, greater<Node>> openList;
@@ -43,11 +47,17 @@ class Astar {
                 }
                 astarGrid[current.y][current.x].isClosed = true;
 
-                if (isEdgeValid(grid, Point{(double)current.x, (double)current.y}, goal)) {
+                if (current.x == (int)goal.x && current.y == (int)goal.y) {
                     goalReached = true;
                     endIndex = {current.x, current.y};
                     break;
                 }
+
+                // if (isEdgeValid(grid, Point{(double)current.x, (double)current.y}, goal)) {
+                //     goalReached = true;
+                //     endIndex = {current.x, current.y};
+                //     break;
+                // }
 
                 for (int i = 0; i < directions.size(); i++) {
                     int x = current.x + directions[i].first;
@@ -101,12 +111,24 @@ class Astar {
     public:
 
         Astar(Grid& grid, Point& start, Point& goal) {
+            auto start_time = high_resolution_clock::now();
             this->astarGrid.resize(grid.height, vector<Node>(grid.width));
             findPath(grid, start, goal);
+            auto end_time = high_resolution_clock::now();
+            this->time = duration_cast<milliseconds>(end_time - start_time).count();
+            this->length = computePathLength(path);
         }
 
         vector<Point> getPath() {
             return path;
+        }
+
+        double getTime() {
+            return time;
+        }
+
+        double getLength() {
+            return length;
         }
     
 };
