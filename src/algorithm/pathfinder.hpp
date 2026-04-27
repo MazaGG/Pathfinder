@@ -207,6 +207,12 @@ class Pathfinder {
                     path.push_back(nextPoint);
                 }
             }
+
+            // connect to start
+            if (path.back() != start) {
+                astar(grid, start, path.back(), path);
+                path.push_back(start);
+            }
             
             reverse(path.begin(), path.end());
         }

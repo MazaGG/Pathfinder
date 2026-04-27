@@ -182,6 +182,9 @@ class VoronoiDiagram {
                     vertices[leftBoundaryVertices.back().first].neighbors.push_back(topBoundaryVertices[0].first);
                     vertices[topBoundaryVertices[0].first].neighbors.push_back(leftBoundaryVertices.back().first);
                 }
+                if (vertices.back().neighbors.empty()) {
+                    vertices.pop_back();
+                }
             }
 
             // top
@@ -206,6 +209,9 @@ class VoronoiDiagram {
                 if (isEdgeValid(grid, vertices[topBoundaryVertices.back().first].position, vertices[rightBoundaryVertices[0].first].position)) {
                     vertices[topBoundaryVertices.back().first].neighbors.push_back(rightBoundaryVertices[0].first);
                     vertices[rightBoundaryVertices[0].first].neighbors.push_back(topBoundaryVertices.back().first);
+                }
+                if (vertices.back().neighbors.empty()) {
+                    vertices.pop_back();
                 }
             }
 
@@ -236,6 +242,9 @@ class VoronoiDiagram {
                     vertices[rightBoundaryVertices.back().first].neighbors.push_back(bottomBoundaryVertices[0].first);
                     vertices[bottomBoundaryVertices[0].first].neighbors.push_back(rightBoundaryVertices.back().first);
                 }
+                if (vertices.back().neighbors.empty()) {
+                    vertices.pop_back();
+                }
             }
 
             // bottom
@@ -264,6 +273,9 @@ class VoronoiDiagram {
                 if (isEdgeValid(grid, vertices[bottomBoundaryVertices.back().first].position, vertices[leftBoundaryVertices[0].first].position)) {
                     vertices[bottomBoundaryVertices.back().first].neighbors.push_back(leftBoundaryVertices[0].first);
                     vertices[leftBoundaryVertices[0].first].neighbors.push_back(bottomBoundaryVertices.back().first);
+                }
+                if (vertices.back().neighbors.empty()) {
+                    vertices.pop_back();
                 }
             }
         }
