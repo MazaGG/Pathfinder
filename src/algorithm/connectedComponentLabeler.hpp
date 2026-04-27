@@ -39,8 +39,14 @@ class ConnectedComponentLabeler {
                     continue;
                 }
                 Point initial = obstacles[i].vertices[0];
-                int initial_x = initial.x >= grid.width ? (int)(initial.x - 1) : (int)initial.x;
-                int initial_y = initial.y >= grid.height ? (int)(initial.y - 1) : (int)initial.y;
+                int initial_x = (int)initial.x;
+                int initial_y = (int)initial.y;
+
+                // clamp to valid range
+                if (initial_x < 0) initial_x = 0;
+                if (initial_x >= grid.width) initial_x = grid.width - 1;
+                if (initial_y < 0) initial_y = 0;
+                if (initial_y >= grid.height) initial_y = grid.height - 1;
 
                 int& obsId = clusterId.cells[initial_y][initial_x];
                 if (obsId != 0) {
