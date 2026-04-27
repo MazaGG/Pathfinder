@@ -15,7 +15,7 @@ using namespace chrono;
 int main(int argc, char** argv) {
 
     // controlled variables
-    cout << "\nInitializing variables...\n";
+    cout << "\nInitializing variables..." << endl;
     int seed = atoi(argv[1]);
     int width = atoi(argv[2]);
     int height = atoi(argv[3]);
@@ -28,23 +28,23 @@ int main(int argc, char** argv) {
     Point goal = {width - 0.5, height - 0.5};
 
     // generate obstacle map
-    cout << "Generating obstacles...\n";
+    cout << "Generating obstacles..." << endl;
     ObstacleGenerator generator(seed, numObstacle, v_max, radius_min, radius_max, grid);
     vector<Obstacle> obstacles = generator.generateObstacles();
 
     // generate occupancy map
-    cout << "Generating occupancy map...\n";
+    cout << "Generating occupancy map..." << endl;
     OccupancyMapGenerator occupancyMap(grid);
     Grid map = occupancyMap.generateOccupancyMap(obstacles, grid);
 
     // find isolated clusters
-    cout << "Finding isolated clusters...\n";
+    cout << "Finding isolated clusters..." << endl;
     ConnectedComponentLabeler ccl(map, obstacles);
     vector<Point> centers = ccl.getCenters();
     Grid clusters = ccl.getClusters();
 
     // flood fill the map
-    cout << "Checking if a path exists...\n";
+    cout << "Checking if a path exists..." << endl;
     FloodFill flood(map, start);
     Grid reachable = flood.getGrid();
 
