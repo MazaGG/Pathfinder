@@ -28,6 +28,13 @@ with open("cluster_centers.csv") as f:
         x, y = map(float, line.strip().split(","))
         cluster_centers.append((x,y))
 
+# # Load voronoi vertices
+# voronoi_vertices = []
+# with open("voronoi_vertices.csv") as f:
+#     for line in f:
+#         x, y = map(float, line.strip().split(","))
+#         voronoi_vertices.append((x,y))
+
 
 # Load voronoi vertices
 voronoi_vertices = []
@@ -78,12 +85,18 @@ with open("djk_path.csv") as f:
         x, y = map(float, line.strip().split(","))
         djk_path.append((x, y))
 
-
+# # CDT path
+# cdt_path = []
+# with open("cdt_path.csv") as f:
+#     for line in f:
+#         x, y = map(float, line.strip().split(","))
+#         cdt_path.append((x, y))
 
 
 
 # PLOTTING
 
+# Obstacles
 plt.imshow(
     occupancy,
     cmap="gray_r",
@@ -96,9 +109,15 @@ for poly in polygons:
     ys = [p[1] for p in poly] + [poly[0][1]]
     plt.plot(xs, ys, color="black", linewidth=1)
 
+# # Clusters
 # centers_x, centers_y = zip(*cluster_centers)
 # plt.scatter(centers_x, centers_y, c='orange', marker='o', label="Cluster Centers")
 
+# # Voronoi Vertices
+# centers_x, centers_y = zip(*voronoi_vertices)
+# plt.scatter(centers_x, centers_y, c='orange', marker='o', label="Voronoi Vertices")
+
+# Voronoi Diagram
 for i, v in enumerate(voronoi_vertices):
     x1, y1 = v["pos"]
 
@@ -127,6 +146,12 @@ if (len(djk_path) > 1):
     path_xs = [p[0] for p in djk_path]
     path_ys = [p[1] for p in djk_path]
     plt.plot(path_xs, path_ys, color="green", linewidth=2, label="Dijkstra")
+
+# # Constrained Delaunay Triangulation A* Path
+# if (len(cdt_path) > 1):
+#     path_xs = [p[0] for p in cdt_path]
+#     path_ys = [p[1] for p in cdt_path]
+#     plt.plot(path_xs, path_ys, color="orange", linewidth=2, label="A* on Constrained Delaunay Triangulation")
 
 # Config
 plt.gca().set_aspect('equal')

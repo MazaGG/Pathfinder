@@ -9,6 +9,7 @@
 #include "algorithm/_index.hpp"
 #include "benchmark/astar.hpp"
 #include "benchmark/dijkstra.hpp"
+#include "benchmark/cdt.hpp"
 using namespace std;
 using namespace chrono;
 
@@ -83,6 +84,15 @@ int main(int argc, char** argv) {
     cout << "time: " << djk.getTime() << " ms\n";
     cout << "length: " << djk.getLength() << " units\n"; 
 
+    // // Constrained Delaunay Triangulation A*
+    // CDTplanner throw_cdt(reachable, obstacles, start, goal);
+    // CDTplanner cdt(reachable, obstacles, start, goal);
+    // vector<VoronoiVertex> vertices = cdt.getVertices();
+    // vector<Point> cdt_path = cdt.getPath();
+    // cout << "\nCONSTRAINED DELAUNAY TRIANGULATION A*: \n";
+    // cout << "time: " << cdt.getTime() << " ms\n";
+    // cout << "length: " << cdt.getLength() << " units\n"; 
+
     // // TEST: compare with freespace CDT (not really CDT since we didn't constraint it to free space, thus expect CDT to actually take longer):
     // cout << "\nTRIANGULATION ON VERTICES RESULTS: \n";
     // vector<Point> t_vertices;
@@ -156,6 +166,12 @@ int main(int argc, char** argv) {
     }
     file4.close();
 
+    // ofstream file4("voronoi_vertices.csv");
+    // for (int i = 0; i < vertices.size(); i++) {
+    //     file4 << vertices[i].x << "," << vertices[i].y << "\n";
+    // }
+    // file4.close();
+
     ofstream file5("cluster_map.csv");
     for (int y = 0; y < clusters.height; y++) {
         for (int x = 0; x < clusters.width; x++) {
@@ -182,6 +198,12 @@ int main(int argc, char** argv) {
         file8 << djk_path[i].x << "," << djk_path[i].y << "\n";
     }
     file8.close();
+
+    // ofstream file9("cdt_path.csv");
+    // for (int i = 0; i <cdt_path.size(); i++) {
+    //     file9 << cdt_path[i].x << "," << cdt_path[i].y << "\n";
+    // }
+    // file9.close();
 
     return 0;
 
