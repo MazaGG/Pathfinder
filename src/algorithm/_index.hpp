@@ -20,6 +20,7 @@ class HybridVoronoiA {
             VoronoiDiagram voronoiDiagram(grid, centers);
             this->vertices = voronoiDiagram.getVertices();
             Pathfinder voronoiAstar(grid, start, goal, vertices);
+            // this->path = voronoiAstar.getPath();
             vector<Point> temp_path = voronoiAstar.getPath();
             PathOptimization optimize(grid, temp_path);
             this->path = optimize.getPath();

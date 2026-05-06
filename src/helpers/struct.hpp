@@ -17,17 +17,19 @@ struct Point {
 
 struct Grid {
     double width, height;
-    std::vector<std::vector<int>> cells;
+    vector<vector<int>> cells;
 };
 
 struct Obstacle {
-    std::vector<Point> vertices;
+    vector<Point> vertices;
     Point center;
+    double velocity_x;
+    double velocity_y;
 };
 
 struct VoronoiVertex {
     Point position;
-    std::vector<int> neighbors;
+    vector<int> neighbors;
     int index;
     int parentIndex = -1;
     bool isClosed = false;
