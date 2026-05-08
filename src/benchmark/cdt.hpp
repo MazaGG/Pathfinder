@@ -18,6 +18,7 @@ class CDTplanner {
         CDT cdt;
         vector<Point> path;
         vector<VoronoiVertex> vertices;
+        const Grid* gridPtr;  // Store grid reference for edge validation
         double time;
         double length;
 
@@ -52,16 +53,28 @@ class CDTplanner {
                 auto cc = cdt.circumcenter(f);
                 Point pos = {cc.x(), cc.y()};
                 
-                if (pos.x >= 0 && pos.x <= grid.width && 
-                    pos.y >= 0 && pos.y <= grid.height) {
-                    VoronoiVertex v;
-                    v.position = pos;
-                    v.index = idx;
-                    vertices.push_back(v);
-                    faceToIndex[f] = idx++;
-                } else {
+                // Check bounds
+                if (pos.x < 0 || pos.x > grid.width || 
+                    pos.y < 0 || pos.y > grid.height) {
                     faceToIndex[f] = -1;
+                    continue;
                 }
+                
+                // Check if this vertex falls in an occupied cell
+                int gx = (int)pos.x;
+                int gy = (int)pos.y;
+                if (gx >= 0 && gx < grid.width && gy >= 0 && gy < grid.height) {
+                    if (grid.cells[gy][gx] == 1) {
+                        faceToIndex[f] = -1;  // Skip — vertex inside obstacle!
+                        continue;
+                    }
+                }
+                
+                VoronoiVertex v;
+                v.position = pos;
+                v.index = idx;
+                vertices.push_back(v);
+                faceToIndex[f] = idx++;
             }
             
             // 4. Build adjacency from face neighbors
@@ -82,12 +95,19 @@ class CDTplanner {
         }
 
         void findPath(const Point& start, const Point& goal) {
-            // Find nearest vertices to start and goal
-            int startIdx = 0, goalIdx = 0;
+            // Find nearest FREE vertices to start and goal
+            int startIdx = -1, goalIdx = -1;
             double minStart = numeric_limits<double>::infinity();
             double minGoal = numeric_limits<double>::infinity();
             
             for (int i = 0; i < vertices.size(); i++) {
+                // Skip vertices in occupied cells
+                int vx = (int)vertices[i].position.x;
+                int vy = (int)vertices[i].position.y;
+                if (gridPtr && vx >= 0 && vx < gridPtr->width && vy >= 0 && vy < gridPtr->height) {
+                    if (gridPtr->cells[vy][vx] == 1) continue;
+                }
+                
                 double dStart = distance(start, vertices[i].position);
                 double dGoal = distance(goal, vertices[i].position);
                 if (dStart < minStart) {
@@ -100,7 +120,9 @@ class CDTplanner {
                 }
             }
             
-            // A* search on the graph
+            if (startIdx == -1 || goalIdx == -1) return;
+            
+            // A* search on the graph with edge validation
             const double INF = numeric_limits<double>::max();
             vector<double> gScore(vertices.size(), INF);
             vector<int> cameFrom(vertices.size(), -1);
@@ -123,7 +145,15 @@ class CDTplanner {
                 for (int neighbor : vertices[current].neighbors) {
                     if (closed[neighbor]) continue;
                     
-                    double tentativeG = gScore[current] + distance(vertices[current].position, vertices[neighbor].position);
+                    // Validate edge using occupancy grid
+                    if (gridPtr) {
+                        if (!isEdgeValid(*gridPtr, vertices[current].position, vertices[neighbor].position)) {
+                            continue;  // Skip edges that cross obstacles
+                        }
+                    }
+                    
+                    double edgeCost = distance(vertices[current].position, vertices[neighbor].position);
+                    double tentativeG = gScore[current] + edgeCost;
                     if (tentativeG < gScore[neighbor]) {
                         gScore[neighbor] = tentativeG;
                         cameFrom[neighbor] = current;
@@ -153,6 +183,7 @@ class CDTplanner {
     public:
 
         CDTplanner(const Grid& grid, const vector<Obstacle>& obstacles, const Point& start, const Point& goal) {
+            gridPtr = &grid;  // Store reference for edge validation
             auto start_time = high_resolution_clock::now();
             buildGraph(grid, obstacles);
             findPath(start, goal);
