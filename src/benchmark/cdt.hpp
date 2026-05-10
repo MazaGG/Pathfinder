@@ -99,10 +99,11 @@ class CDTplanner {
             
             const double INF = numeric_limits<double>::max();
             
-            // Helper: Find nearest vertex that has line-of-sight from a point
-            // If none found, do a grid-based BFS from the point until we find one
-            auto findReachableVertex = [&](const Point& from, set<int>& visited) -> int {
-                // First try: direct line of sight to any vertex
+            // Helper: Find nearest vertex that has line-of-sight, with BFS path
+            auto findReachableVertex = [&](const Point& from, set<int>& visited, vector<Point>& bfsPath) -> int {
+                bfsPath.clear();
+                
+                // First try: direct line of sight
                 int bestIdx = -1;
                 double bestDist = INF;
                 for (int i = 0; i < vertices.size(); i++) {
@@ -112,10 +113,15 @@ class CDTplanner {
                         if (d < bestDist) { bestDist = d; bestIdx = i; }
                     }
                 }
-                if (bestIdx != -1) return bestIdx;
+                if (bestIdx != -1) {
+                    bfsPath.push_back(from);
+                    bfsPath.push_back(vertices[bestIdx].position);
+                    return bestIdx;
+                }
                 
-                // No direct line of sight — BFS on grid from 'from' until we find one
+                // BFS on grid
                 vector<vector<bool>> gridVisited(gridPtr->height, vector<bool>(gridPtr->width, false));
+                vector<vector<pair<int,int>>> parent(gridPtr->height, vector<pair<int,int>>(gridPtr->width, {-1, -1}));
                 queue<pair<int,int>> q;
                 
                 int sx = (int)from.x, sy = (int)from.y;
@@ -123,20 +129,23 @@ class CDTplanner {
                 
                 q.push({sx, sy});
                 gridVisited[sy][sx] = true;
+                int foundX = -1, foundY = -1;
                 
                 while (!q.empty()) {
                     auto [cx, cy] = q.front(); q.pop();
                     
-                    // Check if any vertex is reachable from this cell
                     Point cellPt = {(double)cx, (double)cy};
                     for (int i = 0; i < vertices.size(); i++) {
                         if (visited.count(i)) continue;
                         if (isEdgeValid(*gridPtr, cellPt, vertices[i].position)) {
-                            return i;
+                            foundX = cx;
+                            foundY = cy;
+                            bestIdx = i;
+                            break;
                         }
                     }
+                    if (bestIdx != -1) break;
                     
-                    // Expand neighbors
                     int dx[] = {1, -1, 0, 0, 1, 1, -1, -1};
                     int dy[] = {0, 0, 1, -1, 1, -1, 1, -1};
                     for (int k = 0; k < 8; k++) {
@@ -145,25 +154,43 @@ class CDTplanner {
                         if (gridPtr->cells[ny][nx] == 1) continue;
                         if (gridVisited[ny][nx]) continue;
                         gridVisited[ny][nx] = true;
+                        parent[ny][nx] = {cx, cy};
                         q.push({nx, ny});
                     }
                 }
-                return -1;
+                
+                if (bestIdx != -1) {
+                    // Reconstruct BFS path
+                    vector<Point> reversed;
+                    int cx = foundX, cy = foundY;
+                    while (cx != sx || cy != sy) {
+                        reversed.push_back({(double)cx, (double)cy});
+                        auto [px, py] = parent[cy][cx];
+                        cx = px; cy = py;
+                    }
+                    reversed.push_back(from);
+                    
+                    for (int i = reversed.size() - 1; i >= 0; i--) {
+                        bfsPath.push_back(reversed[i]);
+                    }
+                    bfsPath.push_back(vertices[bestIdx].position);
+                }
+                
+                return bestIdx;
             };
             
             set<int> usedStartVertices, usedGoalVertices;
+            vector<Point> startBfsPath, goalBfsPath;
             
-            int startIdx = findReachableVertex(start, usedStartVertices);
-            int goalIdx = findReachableVertex(goal, usedGoalVertices);
+            int startIdx = findReachableVertex(start, usedStartVertices, startBfsPath);
+            int goalIdx = findReachableVertex(goal, usedGoalVertices, goalBfsPath);
             
             if (startIdx == -1 || goalIdx == -1) return;
             
             usedStartVertices.insert(startIdx);
             usedGoalVertices.insert(goalIdx);
             
-            // Iteratively try to find a path
             while (true) {
-                // A* from startIdx to goalIdx
                 vector<double> gScore(vertices.size(), INF);
                 vector<int> cameFrom(vertices.size(), -1);
                 vector<bool> closed(vertices.size(), false);
@@ -183,7 +210,6 @@ class CDTplanner {
                     if (closed[current]) continue;
                     closed[current] = true;
                     
-                    // Track closest node to goal
                     double d = distance(vertices[current].position, goal);
                     if (d < bestDistToGoal) { bestDistToGoal = d; bestNode = current; }
                     
@@ -205,34 +231,43 @@ class CDTplanner {
                 }
                 
                 if (found) {
-                    // Reconstruct path
                     path.clear();
-                    path.push_back(start);
                     
+                    // Add start BFS path (skip last point — it's the first Voronoi vertex)
+                    for (int i = 0; i < (int)startBfsPath.size() - 1; i++) {
+                        path.push_back(startBfsPath[i]);
+                    }
+                    
+                    // Add Voronoi path
                     int current = goalIdx;
                     vector<Point> reversed;
                     while (current != -1) {
                         reversed.push_back(vertices[current].position);
                         current = cameFrom[current];
                     }
-                    for (int i = reversed.size() - 1; i >= 0; i--) path.push_back(reversed[i]);
-                    path.push_back(goal);
+                    for (int i = reversed.size() - 1; i >= 0; i--) {
+                        path.push_back(reversed[i]);
+                    }
+                    
+                    // Add goal BFS path in reverse (skip first point — it's the last Voronoi vertex)
+                    reverse(goalBfsPath.begin(), goalBfsPath.end());
+                    for (int i = 1; i < (int)goalBfsPath.size(); i++) {
+                        path.push_back(goalBfsPath[i]);
+                    }
+                    
                     return;
                 }
                 
-                // No path — decide whether to change start or goal
                 double distToStart = distance(vertices[bestNode].position, start);
                 double distToGoal = distance(vertices[bestNode].position, goal);
                 
                 if (distToStart < distToGoal) {
-                    // Best node is closer to start — try a different start vertex
-                    int newStart = findReachableVertex(start, usedStartVertices);
+                    int newStart = findReachableVertex(start, usedStartVertices, startBfsPath);
                     if (newStart == -1) break;
                     usedStartVertices.insert(newStart);
                     startIdx = newStart;
                 } else {
-                    // Best node is closer to goal — try a different goal vertex
-                    int newGoal = findReachableVertex(goal, usedGoalVertices);
+                    int newGoal = findReachableVertex(goal, usedGoalVertices, goalBfsPath);
                     if (newGoal == -1) break;
                     usedGoalVertices.insert(newGoal);
                     goalIdx = newGoal;
