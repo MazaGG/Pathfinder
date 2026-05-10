@@ -1,10 +1,8 @@
 name: Analyze Results
 
 on:
-  workflow_run:
-    workflows: ["Benchmark"]
-    types:
-      - completed
+  repository_dispatch:
+    types: [run-analysis]
 
 jobs:
   analyze:
@@ -26,13 +24,11 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Debug - list files
-        run: |
-          echo "Files in artifacts:"
-          find artifacts -type f | head -50
-
       - name: Collect summaries
-        run: python3 scripts/collect_summaries.py
+        run: |
+          mkdir -p collected
+          find artifacts -name "_summary.csv" -exec cp {} collected/ \;
+          python3 scripts/collect_summaries.py
 
       - name: Plot analysis
         run: python3 scripts/plot_analysis.py

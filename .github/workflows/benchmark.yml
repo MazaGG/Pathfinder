@@ -12,7 +12,6 @@ jobs:
       fail-fast: false
       matrix:
         seed: [1]
-        frames: [100]
         width: [1000]
         height: [1000]
         obstacles: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200]
@@ -46,7 +45,6 @@ jobs:
         run: |
           ./build/pathfinder \
           ${{ matrix.seed }} \
-          ${{ matrix.frames }} \
           ${{ matrix.width }} \
           ${{ matrix.height }} \
           ${{ matrix.obstacles }} \
@@ -69,3 +67,11 @@ jobs:
             results.png
             output/_results.csv
             output/_summary.csv
+            output/animation.gif
+
+      - name: Trigger analysis
+        if: success() && matrix.obstacles == 200
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: run-analysis
