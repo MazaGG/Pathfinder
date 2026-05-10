@@ -1,0 +1,51 @@
+name: Analyze Results
+
+on:
+  workflow_run:
+    workflows: ["Benchmark"]
+    types:
+      - completed
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Python
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip
+          pip3 install matplotlib numpy
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect summaries
+        run: |
+          mkdir -p collected
+          find artifacts -name "_summary.csv" -exec cp {} collected/ \;
+          # Rename to include obstacle count from folder name
+          for f in collected/_summary.csv; do
+            dir=$(dirname "$f")
+            obs=$(echo "$dir" | grep -oP 'o\d+' | head -1)
+            if [ -n "$obs" ]; then
+              cp "$f" "collected/${obs}_summary.csv"
+            fi
+          done
+          # If only one file (same name), collect them differently
+          python3 scripts/collect_summaries.py artifacts collected
+
+      - name: Plot combined results
+        run: python3 scripts/plot_analysis.py
+
+      - name: Upload analysis
+        uses: actions/upload-artifact@v4
+        with:
+          name: analysis-results
+          path: |
+            analysis_plot.png
+            collected/combined_summary.csv

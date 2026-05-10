@@ -71,6 +71,20 @@ for frame_file in frame_files:
             for line in f:
                 x, y = map(float, line.strip().split(","))
                 djk_path.append((x, y))
+
+        # # Load D* path for this frame
+        # dstar_path = []
+        # with open(f"output/dstar_path-{frame}.csv") as f:
+        #     for line in f:
+        #         x, y = map(float, line.strip().split(","))
+        #         dstar_path.append((x, y))
+
+        # Load CDT path for this frame
+        cdt_path = []
+        with open(f"output/cdt_path-{frame}.csv") as f:
+            for line in f:
+                x, y = map(float, line.strip().split(","))
+                cdt_path.append((x, y))
         
     # ===== PLOTTING =====
     fig, ax = plt.subplots(figsize=(10, 10))
@@ -105,6 +119,16 @@ for frame_file in frame_files:
             path_ys = [p[1] for p in astar_path]
             ax.plot(path_xs, path_ys, color="red", linewidth=2, label="A* Grid")
         
+        # if len(dstar_path) > 1:
+        #     path_xs = [p[0] for p in dstar_path]
+        #     path_ys = [p[1] for p in dstar_path]
+        #     ax.plot(path_xs, path_ys, color="orange", linewidth=2, label="D* Grid")
+
+        if len(cdt_path) > 1:
+            path_xs = [p[0] for p in cdt_path]
+            path_ys = [p[1] for p in cdt_path]
+            ax.plot(path_xs, path_ys, color="orange", linewidth=2, label="CDT Planner")
+
         if len(djk_path) > 1:
             path_xs = [p[0] for p in djk_path]
             path_ys = [p[1] for p in djk_path]

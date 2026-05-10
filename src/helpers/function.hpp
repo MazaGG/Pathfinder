@@ -15,6 +15,10 @@ double distance(const Point& p, const Point& q) {
     return sqrt((p.x - q.x)*(p.x - q.x) + (p.y - q.y)*(p.y - q.y));
 }
 
+double distance(const int& p1, const int& p2, const int& q1, const int& q2) {
+    return sqrt((p1 - q1)*(p1 - q1) + (p2 - q2)*(p2 - q2));
+}
+
 double manhattan(const int& x1, const int& y1, const int& x2, const int& y2){
     return abs(x1 - x2) + abs (y1 - y2);
 }
@@ -52,7 +56,7 @@ Point findCenter(const Grid& grid, const Obstacle& obstacle) {
             y_max = vertices[i].y;
         }
     }
-    return { (x_min + x_max) / 2, (y_min + y_max) / 2 };
+    return Point{(x_min + x_max) / 2, (y_min + y_max) / 2};
 }
 
 Point intersectionPoint(const Point& p1, const Point& p2, const Point& q1, const Point& q2) {
@@ -65,9 +69,9 @@ Point intersectionPoint(const Point& p1, const Point& p2, const Point& q1, const
     double determinant = a1 * b2 - a2 * b1;
 
     if (abs(determinant) < 1e-6) {
-        return {0, 0};
+        return Point{0, 0};
     }
-    return {(b2 * c1 - b1 * c2) / determinant, (a1 * c2 - a2 * c1) / determinant};
+    return Point{(b2 * c1 - b1 * c2) / determinant, (a1 * c2 - a2 * c1) / determinant};
 }
 
 bool isEdgeValid(const Grid& grid, const Point p, const Point q) { // using Bresenham's line algorithm
@@ -164,7 +168,7 @@ double computePathLength(const vector<Point>& path) {
     for (int i = 1; i < path.size(); i++) {
         len += distance(path[i-1], path[i]);
     }
-
+ 
     return len;
 }
 

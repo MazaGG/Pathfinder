@@ -90,7 +90,9 @@ class Dijkstra {
     
     public:
 
-        Dijkstra(Grid& grid, Point& start, Point& goal) {
+        Dijkstra() {};
+
+        void run(Grid& grid, Point& start, Point& goal) {
             auto start_time = high_resolution_clock::now();
             this->bfsGrid.resize(grid.height, vector<DJKNode>(grid.width));
             findPath(grid, start, goal);

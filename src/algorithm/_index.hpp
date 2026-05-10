@@ -15,7 +15,9 @@ class HybridVoronoiA {
         double length;
 
     public:
-        HybridVoronoiA(Grid& grid, vector<Point>& centers, Point& start, Point& goal) {
+        HybridVoronoiA () {};
+
+        void run(Grid& grid, vector<Point>& centers, Point& start, Point& goal) {
             auto time_start = high_resolution_clock::now();
             VoronoiDiagram voronoiDiagram(grid, centers);
             this->vertices = voronoiDiagram.getVertices();

@@ -95,94 +95,155 @@ class CDTplanner {
         }
 
         void findPath(const Point& start, const Point& goal) {
-            // Find nearest FREE vertices to start and goal
-            int startIdx = -1, goalIdx = -1;
-            double minStart = numeric_limits<double>::infinity();
-            double minGoal = numeric_limits<double>::infinity();
+            if (vertices.empty() || !gridPtr) return;
             
-            for (int i = 0; i < vertices.size(); i++) {
-                // Skip vertices in occupied cells
-                int vx = (int)vertices[i].position.x;
-                int vy = (int)vertices[i].position.y;
-                if (gridPtr && vx >= 0 && vx < gridPtr->width && vy >= 0 && vy < gridPtr->height) {
-                    if (gridPtr->cells[vy][vx] == 1) continue;
-                }
-                
-                double dStart = distance(start, vertices[i].position);
-                double dGoal = distance(goal, vertices[i].position);
-                if (dStart < minStart) {
-                    minStart = dStart;
-                    startIdx = i;
-                }
-                if (dGoal < minGoal) {
-                    minGoal = dGoal;
-                    goalIdx = i;
-                }
-            }
-            
-            if (startIdx == -1 || goalIdx == -1) return;
-            
-            // A* search on the graph with edge validation
             const double INF = numeric_limits<double>::max();
-            vector<double> gScore(vertices.size(), INF);
-            vector<int> cameFrom(vertices.size(), -1);
-            vector<bool> closed(vertices.size(), false);
             
-            priority_queue<pair<double,int>, vector<pair<double,int>>, greater<pair<double,int>>> openList;
-            
-            gScore[startIdx] = distance(start, vertices[startIdx].position);
-            openList.push({gScore[startIdx] + distance(vertices[startIdx].position, goal), startIdx});
-            
-            while (!openList.empty()) {
-                int current = openList.top().second;
-                openList.pop();
+            // Helper: Find nearest vertex that has line-of-sight from a point
+            // If none found, do a grid-based BFS from the point until we find one
+            auto findReachableVertex = [&](const Point& from, set<int>& visited) -> int {
+                // First try: direct line of sight to any vertex
+                int bestIdx = -1;
+                double bestDist = INF;
+                for (int i = 0; i < vertices.size(); i++) {
+                    if (visited.count(i)) continue;
+                    if (isEdgeValid(*gridPtr, from, vertices[i].position)) {
+                        double d = distance(from, vertices[i].position);
+                        if (d < bestDist) { bestDist = d; bestIdx = i; }
+                    }
+                }
+                if (bestIdx != -1) return bestIdx;
                 
-                if (closed[current]) continue;
-                closed[current] = true;
+                // No direct line of sight — BFS on grid from 'from' until we find one
+                vector<vector<bool>> gridVisited(gridPtr->height, vector<bool>(gridPtr->width, false));
+                queue<pair<int,int>> q;
                 
-                if (current == goalIdx) break;
+                int sx = (int)from.x, sy = (int)from.y;
+                if (sx < 0 || sx >= gridPtr->width || sy < 0 || sy >= gridPtr->height) return -1;
                 
-                for (int neighbor : vertices[current].neighbors) {
-                    if (closed[neighbor]) continue;
+                q.push({sx, sy});
+                gridVisited[sy][sx] = true;
+                
+                while (!q.empty()) {
+                    auto [cx, cy] = q.front(); q.pop();
                     
-                    // Validate edge using occupancy grid
-                    if (gridPtr) {
-                        if (!isEdgeValid(*gridPtr, vertices[current].position, vertices[neighbor].position)) {
-                            continue;  // Skip edges that cross obstacles
+                    // Check if any vertex is reachable from this cell
+                    Point cellPt = {(double)cx, (double)cy};
+                    for (int i = 0; i < vertices.size(); i++) {
+                        if (visited.count(i)) continue;
+                        if (isEdgeValid(*gridPtr, cellPt, vertices[i].position)) {
+                            return i;
                         }
                     }
                     
-                    double edgeCost = distance(vertices[current].position, vertices[neighbor].position);
-                    double tentativeG = gScore[current] + edgeCost;
-                    if (tentativeG < gScore[neighbor]) {
-                        gScore[neighbor] = tentativeG;
-                        cameFrom[neighbor] = current;
-                        double fScore = tentativeG + distance(vertices[neighbor].position, goal);
-                        openList.push({fScore, neighbor});
+                    // Expand neighbors
+                    int dx[] = {1, -1, 0, 0, 1, 1, -1, -1};
+                    int dy[] = {0, 0, 1, -1, 1, -1, 1, -1};
+                    for (int k = 0; k < 8; k++) {
+                        int nx = cx + dx[k], ny = cy + dy[k];
+                        if (nx < 0 || nx >= gridPtr->width || ny < 0 || ny >= gridPtr->height) continue;
+                        if (gridPtr->cells[ny][nx] == 1) continue;
+                        if (gridVisited[ny][nx]) continue;
+                        gridVisited[ny][nx] = true;
+                        q.push({nx, ny});
                     }
                 }
-            }
+                return -1;
+            };
             
-            // Reconstruct path
-            path.clear();
-            path.push_back(start);
+            set<int> usedStartVertices, usedGoalVertices;
             
-            int current = goalIdx;
-            vector<Point> reversed;
-            while (current != -1) {
-                reversed.push_back(vertices[current].position);
-                current = cameFrom[current];
-            }
+            int startIdx = findReachableVertex(start, usedStartVertices);
+            int goalIdx = findReachableVertex(goal, usedGoalVertices);
             
-            for (int i = reversed.size() - 1; i >= 0; i--) {
-                path.push_back(reversed[i]);
+            if (startIdx == -1 || goalIdx == -1) return;
+            
+            usedStartVertices.insert(startIdx);
+            usedGoalVertices.insert(goalIdx);
+            
+            // Iteratively try to find a path
+            while (true) {
+                // A* from startIdx to goalIdx
+                vector<double> gScore(vertices.size(), INF);
+                vector<int> cameFrom(vertices.size(), -1);
+                vector<bool> closed(vertices.size(), false);
+                priority_queue<pair<double,int>, vector<pair<double,int>>, greater<pair<double,int>>> openList;
+                
+                gScore[startIdx] = distance(start, vertices[startIdx].position);
+                openList.push({gScore[startIdx] + distance(vertices[startIdx].position, goal), startIdx});
+                
+                bool found = false;
+                int bestNode = startIdx;
+                double bestDistToGoal = distance(vertices[startIdx].position, goal);
+                
+                while (!openList.empty()) {
+                    int current = openList.top().second;
+                    openList.pop();
+                    
+                    if (closed[current]) continue;
+                    closed[current] = true;
+                    
+                    // Track closest node to goal
+                    double d = distance(vertices[current].position, goal);
+                    if (d < bestDistToGoal) { bestDistToGoal = d; bestNode = current; }
+                    
+                    if (current == goalIdx) { found = true; break; }
+                    
+                    for (int neighbor : vertices[current].neighbors) {
+                        if (closed[neighbor]) continue;
+                        if (!isEdgeValid(*gridPtr, vertices[current].position, vertices[neighbor].position)) continue;
+                        
+                        double edgeCost = distance(vertices[current].position, vertices[neighbor].position);
+                        double tentativeG = gScore[current] + edgeCost;
+                        if (tentativeG < gScore[neighbor]) {
+                            gScore[neighbor] = tentativeG;
+                            cameFrom[neighbor] = current;
+                            double fScore = tentativeG + distance(vertices[neighbor].position, goal);
+                            openList.push({fScore, neighbor});
+                        }
+                    }
+                }
+                
+                if (found) {
+                    // Reconstruct path
+                    path.clear();
+                    path.push_back(start);
+                    
+                    int current = goalIdx;
+                    vector<Point> reversed;
+                    while (current != -1) {
+                        reversed.push_back(vertices[current].position);
+                        current = cameFrom[current];
+                    }
+                    for (int i = reversed.size() - 1; i >= 0; i--) path.push_back(reversed[i]);
+                    path.push_back(goal);
+                    return;
+                }
+                
+                // No path — decide whether to change start or goal
+                double distToStart = distance(vertices[bestNode].position, start);
+                double distToGoal = distance(vertices[bestNode].position, goal);
+                
+                if (distToStart < distToGoal) {
+                    // Best node is closer to start — try a different start vertex
+                    int newStart = findReachableVertex(start, usedStartVertices);
+                    if (newStart == -1) break;
+                    usedStartVertices.insert(newStart);
+                    startIdx = newStart;
+                } else {
+                    // Best node is closer to goal — try a different goal vertex
+                    int newGoal = findReachableVertex(goal, usedGoalVertices);
+                    if (newGoal == -1) break;
+                    usedGoalVertices.insert(newGoal);
+                    goalIdx = newGoal;
+                }
             }
-            path.push_back(goal);
         }
     
     public:
+        CDTplanner () {};
 
-        CDTplanner(const Grid& grid, const vector<Obstacle>& obstacles, const Point& start, const Point& goal) {
+        void run(const Grid& grid, const vector<Obstacle>& obstacles, const Point& start, const Point& goal) {
             gridPtr = &grid;  // Store reference for edge validation
             auto start_time = high_resolution_clock::now();
             buildGraph(grid, obstacles);

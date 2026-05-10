@@ -109,8 +109,9 @@ class Astar {
         }
     
     public:
+        Astar () {};
 
-        Astar(Grid& grid, Point& start, Point& goal) {
+        void run(Grid& grid, Point& start, Point& goal) {
             auto start_time = high_resolution_clock::now();
             this->astarGrid.resize(grid.height, vector<Node>(grid.width));
             findPath(grid, start, goal);

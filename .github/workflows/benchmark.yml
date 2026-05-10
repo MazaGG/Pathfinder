@@ -11,10 +11,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        seed: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        seed: [1]
         width: [1000]
         height: [1000]
-        obstacles: [20, 50, 100, 150, 200]
+        obstacles: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200]
 
     steps:
       - uses: actions/checkout@v4
@@ -31,8 +31,8 @@ jobs:
             python3 \
             python3-pip
 
-          pip3 install matplotlib numpy
-      
+          pip3 install matplotlib numpy pandas
+
       - name: Configure
         run: |
           rm -rf build
@@ -48,14 +48,22 @@ jobs:
           ${{ matrix.width }} \
           ${{ matrix.height }} \
           ${{ matrix.obstacles }} \
-          10 20 40
+          10 10 30
+
+      - name: Run summary
+        run: python3 scripts/summary.py
 
       - name: Plot results
-        run: |
-          python3 scripts/plot.py
+        run: python3 scripts/plot.py
 
-      - name: Upload image
+      - name: Generate gif
+        run: python3 scripts/gif.py
+
+      - name: Upload results
         uses: actions/upload-artifact@v4
         with:
           name: result-s${{ matrix.seed }}-w${{ matrix.width }}-h${{ matrix.height }}-o${{ matrix.obstacles }}
-          path: results.png
+          path: |
+            results.png
+            output/_results.csv
+            output/_summary.csv

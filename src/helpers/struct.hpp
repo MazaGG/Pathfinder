@@ -71,3 +71,16 @@ struct DJKNode {
         return gscore > other.gscore;
     }
 };
+
+struct DstarNode {
+    int x, y;
+    int parentX = -1;
+    int parentY = -1;
+    double hscore = numeric_limits<double>::infinity();
+    double kscore = numeric_limits<double>::infinity();
+    bool isNew = false;
+
+    bool operator > (const DstarNode& other) const {
+        return kscore > other.kscore;
+    }
+};

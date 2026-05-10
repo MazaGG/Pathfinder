@@ -9,6 +9,7 @@
 #include "algorithm/floodfill.hpp"
 #include "algorithm/_index.hpp"
 #include "benchmark/astar.hpp"
+#include "benchmark/dstar.hpp"
 #include "benchmark/dijkstra.hpp"
 #include "benchmark/cdt.hpp"
 using namespace std;
@@ -34,6 +35,7 @@ int main(int argc, char** argv) {
     int frame = 0;
     vector<Obstacle> obstacles;
     ObstacleGenerator generator(seed, numObstacle, v_max, radius_min, radius_max, grid);
+    ofstream file0("output/_results.csv");
 
     while (frame != frames) {
         cout << "\n===== FRAME " << frame + 1 << " =====" << endl;
@@ -61,16 +63,16 @@ int main(int argc, char** argv) {
         Grid clusters = ccl.getClusters();
 
         // Obstacles
-        ofstream file("output/obstacles-" + std::to_string(frame) + ".csv");
+        ofstream file1("output/obstacles-" + std::to_string(frame) + ".csv");
         for (int i = 0; i < obstacles.size(); i++) {
             for (int j = 0; j < obstacles[i].vertices.size(); j++) {
-                file << obstacles[i].vertices[j].x << "," << obstacles[i].vertices[j].y << "\n";
+                file1 << obstacles[i].vertices[j].x << "," << obstacles[i].vertices[j].y << "\n";
             }
             if (obstacles[i].vertices.size() > 0) {
-                file << "END\n";
+                file1 << "END\n";
             }
         }
-        file.close();
+        file1.close();
 
         // Occupancy Map
         ofstream file2("output/occupancy_map-" + std::to_string(frame) + ".csv");
@@ -99,31 +101,53 @@ int main(int argc, char** argv) {
         // ALGORITHMS
 
         // Hybrid Voronoi A*
-        HybridVoronoiA throw_hybrid(reachable, centers, start, goal);
-        HybridVoronoiA hybrid(reachable, centers, start, goal);
+        HybridVoronoiA hybrid;
+        hybrid.run(reachable, centers, start, goal);
         vector<VoronoiVertex> vertices = hybrid.getVertices();
         vector<Point> hybrid_path = hybrid.getPath();
         cout << "\nHYBRID VORONOI A*: \n";
         cout << "time: " << hybrid.getTime() << " ms\n";
         cout << "length: " << hybrid.getLength() << " units\n";
 
-        // A*
-        Astar throw_astar(reachable, start, goal);
-        Astar astar(reachable, start, goal);
-        vector<Point> astar_path = astar.getPath();
-        cout << "\nA*: \n";
-        cout << "time: " << astar.getTime() << " ms\n";
-        cout << "length: " << astar.getLength() << " units\n"; 
-
         // Dijkstra
-        Dijkstra throw_djk(reachable, start, goal);
-        Dijkstra djk(reachable, start, goal);
+        Dijkstra djk;
+        djk.run(reachable, start, goal);
         vector<Point> djk_path = djk.getPath();
         cout << "\nDIJKSTRA*: \n";
         cout << "time: " << djk.getTime() << " ms\n";
         cout << "length: " << djk.getLength() << " units\n"; 
 
+        // A*
+        Astar astar;
+        astar.run(reachable, start, goal);
+        vector<Point> astar_path = astar.getPath();
+        cout << "\nA*: \n";
+        cout << "time: " << astar.getTime() << " ms\n";
+        cout << "length: " << astar.getLength() << " units\n"; 
 
+        // // D*
+        // vector<Point> dstar_path;
+        // if (frame == 0) {
+        //     dstar_path = dstar.getPath(reachable, start, goal);
+        // } 
+        // else {
+        //     dstar_path = dstar.updatePath(reachable, start, goal);
+        // }
+        // cout << "\nD*: \n";
+        // cout << "time: " << dstar.getTime() << " ms\n";
+        // cout << "length: " << dstar.getLength() << " units\n"; 
+
+        // CDT
+        CDTplanner cdt;
+        cdt.run(reachable, obstacles, start, goal);
+        // vector<VoronoiVertex> vertices = cdt.getVertices();
+        vector<Point> cdt_path = cdt.getPath();
+        cout << "\nCDT: \n";
+        cout << "time: " << cdt.getTime() << " ms\n";
+        cout << "length: " << cdt.getLength() << " units\n";        
+
+        // Summary Output
+        file0 << frame << "," << hybrid.getTime() << "," << hybrid.getLength() << "," << djk.getTime() << "," << djk.getLength() << "," << astar.getTime() << "," << astar.getLength() << "," << cdt.getTime() << "," << cdt.getLength() << endl;
 
         // PLOTTING
 
@@ -175,11 +199,17 @@ int main(int argc, char** argv) {
         }
         file8.close();
 
-        // ofstream file9("cdt_path.csv");
-        // for (int i = 0; i <cdt_path.size(); i++) {
-        //     file9 << cdt_path[i].x << "," << cdt_path[i].y << "\n";
+        ofstream file9("output/cdt_path-" + std::to_string(frame) + ".csv");
+        for (int i = 0; i <cdt_path.size(); i++) {
+            file9 << cdt_path[i].x << "," << cdt_path[i].y << "\n";
+        }
+        file9.close();
+
+        // ofstream file10("output/dstar_path-" + std::to_string(frame) + ".csv");
+        // for (int i = 0; i <dstar_path.size(); i++) {
+        //     file10 << dstar_path[i].x << "," << dstar_path[i].y << "\n";
         // }
-        // file9.close();
+        // file10.close();
 
         frame++;
     }
