@@ -9,6 +9,7 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 using namespace std;
+using namespace chrono;
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Delaunay_triangulation_2<K> Delaunay;
@@ -39,6 +40,7 @@ class VoronoiDiagram {
         }
 
         void buildVoronoiVertices(Grid& grid) {
+            auto voronoi_start = chrono::high_resolution_clock::now();
             // maps delaunay triangle to indices for neighbor lookup in voronoi vertices
             map<Delaunay::Face_handle, int> faceIndexMap; 
             int faceIndex = 0;
@@ -109,7 +111,11 @@ class VoronoiDiagram {
                 }
             }
 
+            auto border_start = chrono::high_resolution_clock::now();
             connectBorderVertices(grid, leftBoundaryVertices, topBoundaryVertices, rightBoundaryVertices, bottomBoundaryVertices);
+            auto voronoi_end = chrono::high_resolution_clock::now();
+            cout << "   Voronoi Graph: " << duration_cast<milliseconds>(border_start - voronoi_start).count() << "ms\n";
+            cout << "   Border Check: " << duration_cast<milliseconds>(voronoi_end - border_start).count() << "ms\n";
         }
 
         void findSegmentInBbox(const K::Segment_2* segment, int& currentIndex, vector<pair<int, double>>& leftBoundaryVertices, vector<pair<int, double>>& topBoundaryVertices, vector<pair<int, double>>& rightBoundaryVertices, vector<pair<int, double>>& bottomBoundaryVertices) {
@@ -287,9 +293,8 @@ class VoronoiDiagram {
             auto graph_start = chrono::high_resolution_clock::now();
             buildVoronoiGraph(grid, centers);
             auto graph_end = chrono::high_resolution_clock::now();
-            auto voronoi_start = chrono::high_resolution_clock::now();
+            cout << "   Delaunay Triangulation: " << duration_cast<milliseconds>(graph_end - graph_start).count() << "ms\n";
             buildVoronoiVertices(grid);
-            auto voronoi_end = chrono::high_resolution_clock::now();
         }
 
         Delaunay getGraph() {

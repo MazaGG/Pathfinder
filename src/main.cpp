@@ -85,12 +85,12 @@ int main(int argc, char** argv) {
         file2.close();
 
         // flood fill the map
-        cout << "Checking if a path exists..." << endl;
         FloodFill flood(map, start);
         Grid reachable = flood.getGrid();
 
+        cout << "Checking if a path exists..." << endl;
         // check if generated map is feasible
-        if (reachable.cells[(int)goal.y][(int)goal.x] == 1 || map.cells[(int)start.y][(int)start.x] == 1) {
+        if (reachable.cells[(int)goal.y][(int)goal.x] == 1 || reachable.cells[(int)start.y][(int)start.x] == 1) {
             cout << "\nNO PATH EXISTS\n";
             frame++;
             continue;

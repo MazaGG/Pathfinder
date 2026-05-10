@@ -1,8 +1,10 @@
 name: Analyze Results
 
 on:
-  repository_dispatch:
-    types: [run-analysis]
+  workflow_run:
+    workflows: ["Benchmark"]
+    types:
+      - completed
 
 jobs:
   analyze:
@@ -18,11 +20,12 @@ jobs:
           pip3 install matplotlib numpy
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: dawidd6/action-download-artifact@v3
         with:
-          pattern: result-*
+          workflow: benchmark.yml
+          workflow_conclusion: success
           path: artifacts
-          merge-multiple: true
+          github_token: ${{ secrets.PAT }}
 
       - name: Collect summaries
         run: |

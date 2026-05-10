@@ -24,11 +24,13 @@ class HybridVoronoiA {
             Pathfinder voronoiAstar(grid, start, goal, vertices);
             // this->path = voronoiAstar.getPath();
             vector<Point> temp_path = voronoiAstar.getPath();
+            auto optimize_start = high_resolution_clock::now();
             PathOptimization optimize(grid, temp_path);
             this->path = optimize.getPath();
             auto time_end = high_resolution_clock::now();
             this->time = duration_cast<milliseconds>(time_end - time_start).count();
             this->length = computePathLength(path);
+            cout << "   Optimization: " << duration_cast<milliseconds>(time_end - optimize_start).count() << "ms\n";
         }
 
         vector<VoronoiVertex> getVertices() {

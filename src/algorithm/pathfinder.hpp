@@ -6,6 +6,7 @@
 #include "../helpers/function.hpp"
 #include "voronoiDiagram.hpp"
 using namespace std;
+using namespace chrono;
 
 class Pathfinder {
 
@@ -118,6 +119,8 @@ class Pathfinder {
         }
 
         void findPath(const Grid& grid, const Point& start, const Point& goal, vector<VoronoiVertex>& vertices) {
+            auto global_start = high_resolution_clock::now();
+
             int start_index = -1;
             int goal_index = -1;
             double bestStart = numeric_limits<double>::infinity();
@@ -183,7 +186,12 @@ class Pathfinder {
                 }
             }
 
+            auto global_end = high_resolution_clock::now();
             buildPath(grid, endIndex, start, goal, vertices);
+            auto build_end = high_resolution_clock::now();
+
+            cout << "   Global Pathfinding: " << duration_cast<milliseconds>(global_end - global_start).count() << "ms\n";
+            cout << "   Local Pathfinding: " << duration_cast<milliseconds>(build_end - global_end).count() << "ms\n";
         }
 
         void buildPath (const Grid& grid, const int& endIndex, const Point& start, const Point& goal, const vector<VoronoiVertex>& vertices) {
