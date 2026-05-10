@@ -183,7 +183,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=CMSC190
+CMAKE_PROJECT_NAME:STATIC=Pathfinder
 
 //Value Computed by CMake
 CMAKE_PROJECT_SPDX_LICENSE:STATIC=
@@ -287,6 +287,15 @@ MPFR_INCLUDE_DIR:PATH=/opt/homebrew/include
 MPFR_LIBRARIES:FILEPATH=/opt/homebrew/lib/libmpfr.dylib
 
 MPFR_LIBRARIES_DIR:FILEPATH=/opt/homebrew/lib
+
+//Value Computed by CMake
+Pathfinder_BINARY_DIR:STATIC=/Users/guinness.g.maza/Documents/Pathfinder/build
+
+//Value Computed by CMake
+Pathfinder_IS_TOP_LEVEL:STATIC=ON
+
+//Value Computed by CMake
+Pathfinder_SOURCE_DIR:STATIC=/Users/guinness.g.maza/Documents/Pathfinder
 
 //The directory containing a CMake configuration file for boost_headers.
 boost_headers_DIR:PATH=/opt/homebrew/lib/cmake/boost_headers-1.90.0

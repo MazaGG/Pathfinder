@@ -117,24 +117,24 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named test_obstacles
+# Target rules for targets named pathfinder
 
 # Build rule for target.
-test_obstacles: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_obstacles
-.PHONY : test_obstacles
+pathfinder: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 pathfinder
+.PHONY : pathfinder
 
 # fast build rule for target.
-test_obstacles/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_obstacles.dir/build.make CMakeFiles/test_obstacles.dir/build
-.PHONY : test_obstacles/fast
+pathfinder/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pathfinder.dir/build.make CMakeFiles/pathfinder.dir/build
+.PHONY : pathfinder/fast
 
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
 # target to build an object file
 src/main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_obstacles.dir/build.make CMakeFiles/test_obstacles.dir/src/main.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pathfinder.dir/build.make CMakeFiles/pathfinder.dir/src/main.cpp.o
 .PHONY : src/main.cpp.o
 
 src/main.i: src/main.cpp.i
@@ -142,7 +142,7 @@ src/main.i: src/main.cpp.i
 
 # target to preprocess a source file
 src/main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_obstacles.dir/build.make CMakeFiles/test_obstacles.dir/src/main.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pathfinder.dir/build.make CMakeFiles/pathfinder.dir/src/main.cpp.i
 .PHONY : src/main.cpp.i
 
 src/main.s: src/main.cpp.s
@@ -150,7 +150,7 @@ src/main.s: src/main.cpp.s
 
 # target to generate assembly for a file
 src/main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_obstacles.dir/build.make CMakeFiles/test_obstacles.dir/src/main.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/pathfinder.dir/build.make CMakeFiles/pathfinder.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
 # Help Target
@@ -161,7 +161,7 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... test_obstacles"
+	@echo "... pathfinder"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

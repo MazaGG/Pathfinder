@@ -1,183 +1,116 @@
 #pragma once
 #include <vector>
-#include <queue>
-#include <limits>
-#include <algorithm>
 #include <chrono>
 #include "../helpers/struct.hpp"
 #include "../helpers/function.hpp"
-
 using namespace std;
-using namespace std::chrono;
+using namespace chrono;
 
-/*
-    Dijkstra Grid Traversal
-    - 4-direction movement
-    - uniform edge cost = 1
-    - grid.cells[y][x] == 1 means blocked
-*/
+class Dijkstra {
 
-class DijkstraGrid {
-private:
-    vector<Point> path;
-    double elapsedTime;   // milliseconds
-    double pathLength;    // number of moves
+    private:
+        vector<Point> path;
+        vector<vector<DJKNode>> bfsGrid;
+        vector<pair<int,int>> directions = {{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1}};
+        double time;
+        double length;
 
-public:
-    DijkstraGrid(
-        const Grid& grid,
-        const Point& start,
-        const Point& goal
-    ) {
-        solve(grid, start, goal);
-    }
+        void findPath(const Grid& grid, const Point& start, const Point& goal) {
+            priority_queue<DJKNode, vector<DJKNode>, greater<DJKNode>> openList;
+            bfsGrid[(int)start.y][(int)start.x].x = (int)start.x;
+            bfsGrid[(int)start.y][(int)start.x].y = (int)start.y;
+            bfsGrid[(int)start.y][(int)start.x].gscore = 0;
+            openList.push(bfsGrid[(int)start.y][(int)start.x]);
+            double moveCost = 1;
+            bool goalReached = false;
+            pair<int,int> endIndex = {-1,-1};
 
-    void solve(
-        const Grid& grid,
-        const Point& start,
-        const Point& goal
-    ) {
-        auto begin = high_resolution_clock::now();
+            while (!openList.empty()) {
+                DJKNode current = openList.top();
+                openList.pop();
 
-        path.clear();
-        elapsedTime = 0.0;
-        pathLength = 0.0;
+                if (bfsGrid[current.y][current.x].isClosed) {
+                    continue;
+                }
+                bfsGrid[current.y][current.x].isClosed = true;
 
-        int width  = (int)grid.width;
-        int height = (int)grid.height;
-
-        int sx = (int)start.x;
-        int sy = (int)start.y;
-        int gx = (int)goal.x;
-        int gy = (int)goal.y;
-
-        // invalid start / goal
-        if (sx < 0 || sx >= width || sy < 0 || sy >= height ||
-            gx < 0 || gx >= width || gy < 0 || gy >= height ||
-            grid.cells[sy][sx] == 1 ||
-            grid.cells[gy][gx] == 1) {
-
-            auto end = high_resolution_clock::now();
-            elapsedTime =
-                duration<double, milli>(end - begin).count();
-            return;
-        }
-
-        vector<vector<AstarCell>> state(
-            height,
-            vector<AstarCell>(width)
-        );
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                state[y][x].isClose = false;
-                state[y][x].gScore =
-                    numeric_limits<double>::infinity();
-                state[y][x].parent = {-1, -1};
-            }
-        }
-
-        priority_queue<
-            ANode,
-            vector<ANode>,
-            greater<ANode>
-        > pq;
-
-        state[sy][sx].gScore = 0.0;
-        pq.push({sx, sy, 0.0});
-
-        int dx[4] = {1, -1, 0, 0};
-        int dy[4] = {0, 0, 1, -1};
-
-        while (!pq.empty()) {
-            ANode current = pq.top();
-            pq.pop();
-
-            int x = current.x;
-            int y = current.y;
-
-            if (state[y][x].isClose)
-                continue;
-
-            state[y][x].isClose = true;
-
-            // reached goal
-            if (x == gx && y == gy) {
-                int cx = gx;
-                int cy = gy;
-
-                while (!(cx == -1 && cy == -1)) {
-                    path.push_back({
-                        (double)cx,
-                        (double)cy
-                    });
-
-                    pair<int,int> p =
-                        state[cy][cx].parent;
-
-                    cx = p.first;
-                    cy = p.second;
+                if (current.x == (int)goal.x && current.y == (int)goal.y) {
+                    goalReached = true;
+                    endIndex = {current.x, current.y};
+                    break;
                 }
 
-                reverse(path.begin(), path.end());
+                for (int i = 0; i < directions.size(); i++) {
+                    int x = current.x + directions[i].first;
+                    int y = current.y + directions[i].second;
+                    moveCost = 1;
 
-                if (path.size() > 1)
-                    pathLength =
-                        (double)path.size() - 1.0;
+                    if (x < 0 || x >= grid.width || y < 0 || y >= grid.height) {
+                        continue;
+                    }
 
-                break;
-            }
+                    if (grid.cells[y][x] == 1) {
+                        continue;
+                    }
 
-            for (int i = 0; i < 4; i++) {
-                int nx = x + dx[i];
-                int ny = y + dy[i];
+                    if (directions[i].first != 0 && directions[i].second != 0) {
+                        if (grid.cells[current.y][current.x + directions[i].first] == 1 && grid.cells[current.y + directions[i].second][current.x] == 1) {
+                            continue;
+                        }
+                        moveCost = 1.414;
+                    }
 
-                if (nx < 0 || nx >= width ||
-                    ny < 0 || ny >= height)
-                    continue;
-
-                if (grid.cells[ny][nx] == 1)
-                    continue;
-
-                if (state[ny][nx].isClose)
-                    continue;
-
-                double newCost =
-                    state[y][x].gScore + 1.0;
-
-                if (newCost <
-                    state[ny][nx].gScore) {
-
-                    state[ny][nx].gScore =
-                        newCost;
-
-                    state[ny][nx].parent =
-                        {x, y};
-
-                    pq.push({
-                        nx,
-                        ny,
-                        newCost
-                    });
+                    double gscore = current.gscore + moveCost;
+                    if (gscore < bfsGrid[y][x].gscore) {
+                        bfsGrid[y][x].x = x;
+                        bfsGrid[y][x].y = y;
+                        bfsGrid[y][x].gscore = gscore;
+                        bfsGrid[y][x].parentX = current.x;
+                        bfsGrid[y][x].parentY = current.y;
+                        openList.push(bfsGrid[y][x]);
+                    }
                 }
             }
+
+            if (goalReached) {
+                int x = endIndex.first;
+                int y = endIndex.second;
+                while (x != -1 && y != -1) {
+                    path.push_back({(double)x, (double)y});
+                    int next_x = bfsGrid[y][x].parentX;
+                    int next_y = bfsGrid[y][x].parentY;
+                    x = next_x;
+                    y = next_y;
+                }
+            }
+
+            reverse(path.begin(), path.end());
+            path.push_back(goal);
+        }
+    
+    public:
+
+        Dijkstra() {};
+
+        void run(Grid& grid, Point& start, Point& goal) {
+            auto start_time = high_resolution_clock::now();
+            this->bfsGrid.resize(grid.height, vector<DJKNode>(grid.width));
+            findPath(grid, start, goal);
+            auto end_time = high_resolution_clock::now();
+            this->time = duration_cast<milliseconds>(end_time - start_time).count();
+            this->length = computePathLength(path);
         }
 
-        auto end = high_resolution_clock::now();
+        vector<Point> getPath() {
+            return path;
+        }
 
-        elapsedTime =
-            duration<double, milli>(end - begin).count();
-    }
+        double getTime() {
+            return time;
+        }
 
-    vector<Point> getPath() const {
-        return path;
-    }
-
-    double getTime() const {
-        return elapsedTime;
-    }
-
-    double getLength() const {
-        return pathLength;
-    }
+        double getLength() {
+            return length;
+        }
+    
 };

@@ -89,5 +89,5 @@ set(CMAKE_MAKEFILE_PRODUCTS
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
-  "CMakeFiles/test_obstacles.dir/DependInfo.cmake"
+  "CMakeFiles/pathfinder.dir/DependInfo.cmake"
   )

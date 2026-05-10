@@ -1,272 +1,314 @@
 #pragma once
 #include <vector>
-#include <limits>
 #include <queue>
-#include <cmath>
 #include <chrono>
 #include "../helpers/struct.hpp"
-#include "../helpers/function.hpp" 
+#include "../helpers/function.hpp"
+#include "voronoiDiagram.hpp"
 using namespace std;
-using namespace chrono;
 
 class Pathfinder {
 
     private:
-        Grid grid;
-        vector<VoronoiVertex> graph;
-        vector<bool> visited;
-        Point start;
-        Point goal;
+        // vector<Point> globalPath;
+        // vector<Point> localPath;
+        int searchId;
+        vector<Point> path;
+        vector<vector<AstarNode>> astarGrid;
+        vector<pair<int,int>> directions = {{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1}};
 
-        void backtrackVoronoi(vector<Point>& path, int& goalIdx, vector<VoronoiVertex>& graph, vector<int>& parent) {
-            // cout << "V Path: ";
-            for (int i = goalIdx; i != -1; i = parent[i]) {
-                path.push_back(graph[i].position);
-                visited[i] = true;
-                // cout << "(" << graph[i].position.x << "," << graph[i].position.y << ")";
-            }
-            // cout << "\n";
-            reverse(path.begin(), path.end());
-        }
+        Point getTraversable(const Grid& grid, const Point& p, const Point& q) { // using Bresenham's line algorithm
+            int x0 = (int)p.x;
+            int y0 = (int)p.y;
+            int x1 = (int)q.x;
+            int y1 = (int)q.y;
+            int dx = abs(x1 - x0);
+            int dy = abs(y1 - y0);
+            int sx = (x0 < x1) ? 1 : -1;
+            int sy = (y0 < y1) ? 1 : -1;
+            int err = dx - dy;
 
-        vector<Point> backtrackAstar(ANode& current, vector<vector<AstarCell>>& gridData) {
-            vector<Point> path;
-            // cout << "A Path: ";
-            while (current.x != -1 && current.y != -1) {
-                path.push_back({(double)current.x, (double)current.y});
-                pair<int,int> parent = gridData[current.y][current.x].parent;
-                // cout << "(" << current.x << "," << current.y << ")";
-                current.x = parent.first;
-                current.y = parent.second;
-            }
-            // cout << "\n";
-            reverse(path.begin(),path.end());
-            return path;
-        }
+            Point lastValidPoint = p;
+            while (true) {
 
-        vector<Point> voronoiAstar(Point& start, int& currentIdx, vector<bool>& visited) {
-            vector<Point> path;
-            priority_queue<VNode, vector<VNode>, greater<VNode>> open;
-            vector<bool>& closed = visited;
-            vector<double> gScore(graph.size(), numeric_limits<double>::infinity());
-            vector<int> parent(graph.size(), -1);
-            
-            // find the voronoi vertex closes to the goal
-            int goalIdx = -1;
-            double bestDistance = numeric_limits<double>::infinity();
-            for (int i = 0; i < graph.size(); i++) {
-                double testDist = distance(graph[i].position, goal);
-                if (testDist < bestDistance) {
-                    bestDistance = testDist;
-                    goalIdx = i;
+                if (grid.cells[y0][x0] == 1) {
+                    return lastValidPoint;
+                }
+
+                lastValidPoint = Point{(double)x0, (double)y0};
+
+                if (x0 == x1 && y0 == y1) {
+                    return q;
+                }
+
+                int e2 = 2 * err;
+                if (e2 > -dy) {
+                    err -= dy;
+                    x0 += sx;
+                }
+                if (e2 < dx) {
+                    err += dx;
+                    y0 += sy;
                 }
             }
+        }
 
-            gScore[currentIdx] = 0;
-            open.push({currentIdx, distance(graph[currentIdx].position, goal)});
-            int bestToGoalIdx = currentIdx;
-            double bestToGoal = distance(graph[currentIdx].position, goal);
+        Point findNearestFreeCell(const Grid& grid, const Point& start, const Point& goal) {
+            searchId++;
+            priority_queue<AstarNode, vector<AstarNode>, greater<AstarNode>> openList;
 
-            while (!open.empty()) {
-                VNode current = open.top();
-                open.pop();
-        
-                // ERROR: possible source of error ?
-                currentIdx = current.idx;
-                if (closed[currentIdx]) {
+            int start_x = (int)start.x;
+            int start_y = (int)start.y;
+            AstarNode& startNode = astarGrid[start_y][start_x];
+            startNode.x = start_x;
+            startNode.y = start_y;
+            startNode.gscore = 0;
+            startNode.gscoreId = searchId;
+            startNode.score = distance(start, goal);
+            startNode.parentX = -1;
+            startNode.parentY = -1;
+            openList.push(startNode);
+            double moveCost = 1;
+
+            while(!openList.empty()) {
+                AstarNode current = openList.top();
+                openList.pop();
+
+                if (astarGrid[current.y][current.x].closedId == searchId) {
                     continue;
                 }
-                closed[currentIdx] = true;
+                astarGrid[current.y][current.x].closedId = searchId;
 
-                // keeps track of the best path so far
-                double distToGoal = distance(graph[currentIdx].position, goal);
-                if (distToGoal < bestToGoal) {
-                    bestToGoal = distToGoal;
-                    bestToGoalIdx = currentIdx;
+                if (grid.cells[current.y][current.x] == 0) {
+                    return Point{(double)current.x, (double)current.y};
                 }
 
-                // goal found
-                if (currentIdx == goalIdx) {
-                    bestToGoalIdx = currentIdx;
-                    break;
-                }
+                for (int i = 0; i < directions.size(); i++) {
+                    int x = current.x + directions[i].first;
+                    int y = current.y + directions[i].second;
+                    moveCost = 1;
 
-                // add valid neighbors to the open list and update gscore accordingly
-                for (int i = 0; i < graph[currentIdx].neighbors.size(); i++) {
-                    int neighborIdx = graph[currentIdx].neighbors[i];
-                    if (!isEdgeValid(grid, graph[currentIdx].position, graph[neighborIdx].position)) {
+                    if (x < 0 || x >= grid.width || y < 0 || y >= grid.height) {
                         continue;
                     }
                     
-                    double cost = gScore[currentIdx] + distance(graph[currentIdx].position, graph[neighborIdx].position);
-                    if (cost < gScore[neighborIdx]) {
-                        gScore[neighborIdx] = cost;
-                        parent[neighborIdx] = currentIdx;
-                        double score = cost + distance(graph[neighborIdx].position, graph[goalIdx].position);
-                        open.push({neighborIdx, score});
+                    if (directions[i].first != 0 && directions[i].second != 0) {
+                        if (grid.cells[current.y][current.x + directions[i].first] == 1 && grid.cells[current.y + directions[i].second][current.x] == 1) {
+                            continue;
+                        }
+                        moveCost = 1.414;
+                    }
+
+                    double gscore = current.gscore + moveCost;
+                    AstarNode& neighbor = astarGrid[y][x];
+                    if (neighbor.gscoreId != searchId || gscore < neighbor.gscore) {
+                        neighbor.x = x;
+                        neighbor.y = y;
+                        neighbor.gscore = gscore;
+                        neighbor.gscoreId = searchId;
+                        neighbor.score = gscore + distance({(double)x, (double)y}, goal);
+                        neighbor.parentX = current.x;
+                        neighbor.parentY = current.y;
+                        openList.push(neighbor);
                     }
                 }
             }
-            
-            // int startIdx = bestToGoalIdx;
-            // check if the start can connect to the "best start" in voronoi graph
-            // cout << "Start in vor: " << path[0].x << "," << path[0].y << "\n";
-            // if (!isEdgeValid(grid, start, {path[0].x, path[0].y})) {
-            //     cout << "ENTERS THIS because start is: " << start.x << "," << start.y << "\n";
-            //     vector<Point> start_path = astarGrid(start, startIdx);
-            //     path.insert(path.begin(), start_path.begin(), start_path.end() - 1);
-            // }
-            currentIdx = bestToGoalIdx;
-            backtrackVoronoi(path, bestToGoalIdx, graph, parent);
-            // cout << "bestIdx: " << currentIdx << "\n";
-            return path;
+
+            return Point{-1, -1};
         }
 
-        vector<Point> astarGrid(const Point start, int& v_entry) {
-            vector<Point> path;
-            vector<vector<AstarCell>> gridData(grid.height, vector<AstarCell>(grid.width, AstarCell{false, numeric_limits<double>::infinity(), pair<int,int>(-1,-1)}));
-            priority_queue<ANode, vector<ANode>, greater<ANode>> open;
-            bool directToGoal = false;
-            int start_x = (int)start.x;
-            int start_y = (int)start.y;
-            int goal_x = (int)goal.x;
-            int goal_y = (int)goal.y;
-            ANode current;
-            gridData[start_y][start_x].gScore = 0;
-            open.push({start_x, start_y, manhattan(start_x, start_y, goal_x, goal_y)});
+        void findPath(const Grid& grid, const Point& start, const Point& goal, vector<VoronoiVertex>& vertices) {
+            int start_index = -1;
+            int goal_index = -1;
+            double bestStart = numeric_limits<double>::infinity();
+            double bestGoal = numeric_limits<double>::infinity();
 
-            //directions
-            static const vector<pair<int,int>> directions = {{1,0},{-1,0},{0,1},{0,-1}};
-
-            while (!open.empty()) {
-                current = open.top();
-                open.pop();
-
-                // check if can go to goal directly
-                if (isEdgeValid(grid, {(double)current.x, (double)current.y}, goal)) {
-                    directToGoal = true;
-                    break;
+            // find point closes to start and goal
+            for (int i = 0; i < vertices.size(); i++) {
+                double startDistance = distance(start, vertices[i].position);
+                double goalDistance = distance(goal, vertices[i].position);
+                if (startDistance < bestStart) {
+                    bestStart = startDistance;
+                    start_index = i;
                 }
+                if (goalDistance < bestGoal) {
+                    bestGoal = goalDistance;
+                    goal_index = i;
+                }
+            }
 
-                if (gridData[current.y][current.x].isClose) {
+            // Refactor: prolly need to so astar here when checking if start can go directly to start_index
+            int endIndex = -1;
+            double bestDistanceToGoal = distance(start, goal);
+            priority_queue<pair<double,int>, vector<pair<double,int>>, greater<pair<double,int>>> openList;
+            vertices[start_index].gscore = distance(start, vertices[start_index].position);
+            vertices[start_index].score = vertices[start_index].gscore + distance(goal, vertices[start_index].position);
+            openList.push({vertices[start_index].score, start_index});
+
+            while (!openList.empty()) {
+                int currentIndex = openList.top().second;
+                VoronoiVertex& current = vertices[currentIndex];
+                openList.pop();
+
+                if (current.isClosed) { // if already visited, skip
                     continue;
                 }
-                gridData[current.y][current.x].isClose = true;
+                current.isClosed = true;
 
-                // goal found
-                if (current.x == goal_x && current.y == goal_y) {
+                // check if can traverse directly to goal
+                if (isEdgeValid(grid, current.position, goal)) {
+                    endIndex = current.index;
                     break;
                 }
 
-                // check if can connect to a voronoi vertex
-                // v_entry = findNearestVisibleVertex({(double)current.x, (double)current.y}, goal, graph, visited, grid);
-                // if (v_entry != -1) {
-                //     cout << "Crit Point: " << current.x << "," << current.y << "\n";
-                //     cout << "V_entry: " << graph[v_entry].position.x << "," << graph[v_entry].position.y << "\n";
-                //     path.push_back(graph[v_entry].position);
-                //     break;
-                // }
+                // track node closest to goal
+                double distanceToGoal = distance(current.position, goal);
+                if (distanceToGoal < bestDistanceToGoal) {
+                    bestDistanceToGoal = distanceToGoal;
+                    endIndex = current.index;
+                }
 
-                // add valid neighbors to the open list and update gscore accordingly
-                for (int i = 0; i < directions.size(); i++) {
-                    int neighbor_x = current.x + directions[i].first;
-                    int neighbor_y = current.y + directions[i].second;
-
-                    if (neighbor_x < 0 || neighbor_x >= grid.width || neighbor_y < 0 || neighbor_y >= grid.height) {
-                        continue;
-                    }
-                    if (grid.cells[neighbor_y][neighbor_x] == 1) {
-                        continue;
-                    }
-
-                    double gScore = gridData[current.y][current.x].gScore + manhattan(current.x, current.y, neighbor_x, neighbor_y);
-                    if (gScore < gridData[neighbor_y][neighbor_x].gScore) {
-                        gridData[neighbor_y][neighbor_x].gScore = gScore;
-                        gridData[neighbor_y][neighbor_x].parent = pair<int,int>(current.x, current.y);
-                        double score = gScore + manhattan(neighbor_x, neighbor_y, goal_x, goal_y);
-                        open.push({neighbor_x, neighbor_y, score});
+                // add neighbors
+                for (int i = 0; i < current.neighbors.size(); i++) {
+                    int& neighborIndex = current.neighbors[i];
+                    VoronoiVertex& neighbor = vertices[neighborIndex];
+                    double gscore = current.gscore + distance(current.position, neighbor.position);
+                    double score = gscore + distance(current.position, goal);
+                    if (gscore < neighbor.gscore) {
+                        neighbor.gscore = gscore;
+                        neighbor.score = score;
+                        neighbor.parentIndex = current.index;
+                        openList.push({neighbor.score, neighborIndex});
                     }
                 }
             }
 
-            vector<Point> backtrack = backtrackAstar(current, gridData);
-            if (v_entry != -1) {
-                backtrack.push_back(graph[v_entry].position);
-            }
-            if (directToGoal) {
-                backtrack.push_back(goal);
-            }
-            return backtrack;
+            buildPath(grid, endIndex, start, goal, vertices);
         }
 
-        // JPS pseudocode
-        // - fixed yung pagcheck mo for each direction (eg., for horizontal, horizontal lang dapat yung best move)
-        // - due to obstacles, you will find forced neighbors (the goal is also considered a force neighbor)
-        // - the parent of the forced neighbors / the node with a forced neighbor becomes a jump point and gets added to the open list
-        // - do A star algorithm normally
-        // void jumpPointSearch(Grid& grid, vector<VoronoiVertex>& graph, Point& start, Point& goal) {
+        void buildPath (const Grid& grid, const int& endIndex, const Point& start, const Point& goal, const vector<VoronoiVertex>& vertices) {
+            path.push_back(goal);
 
-        // }
-    
-    public:
-        
-        Pathfinder(Grid grid, vector<VoronoiVertex> graph, Point start, Point goal) {
-            this->grid = grid;
-            this->graph = graph;
-            this->start = start;
-            this->goal = goal;
-            this->visited = vector<bool>(graph.size(), false);
-        }
-        
-        vector<Point> findPath() {
-            vector<Point> path;
-            path.push_back(start);
-            Point current = start;
-            // check if can go directly to goal
-            if (isEdgeValid(grid, start, goal)) {
-                path.push_back(goal);
-                return path;
-            }
-            // otherwise, trigger hybrid pathfinder
-            int v_entry = findNearestVisibleVertex(current, goal, graph, visited, grid);
-            int a_entry = -1;
-            while(true) { 
-                // cout << "TOP CURRENT: " << current.x << "," << current.y << "\n";
-                // cout << "TOP GOAL: " << goal.x << "," << goal.y << "\n";
-                if (v_entry != -1 && a_entry == -1) {
-                    // auto vstar_start = high_resolution_clock::now();
-                    // cout << "v_entry: " << v_entry << "\n";
-                    // cout << "v: " << graph[v_entry].position.x << "," << graph[v_entry].position.y << "\n";
-                    vector<Point> v_path = voronoiAstar(path.back(), v_entry, visited);
-                    current = v_path.back();
-                    // cout << "First vertex from vor: " << v_path[0].x << "," << v_path[0].y << "\n";
-                    // cout << "Last vertex from vor: " << graph[v_entry].position.x << "," << graph[v_entry].position.y << "\n";
-                    a_entry = v_entry;
-                    path.insert(path.end(), v_path.begin() + 1, v_path.end());
-                    // check if can go directly to the voronoi vertex from starting node:
-                    // auto vstar_end = high_resolution_clock::now();
-                    // cout << "voronoiAstar time: " << duration_cast<milliseconds>(vstar_end - vstar_start).count() << "ms\n";
-                } 
-                else if (a_entry != -1) {
-                    // auto astar_start = high_resolution_clock::now();
-                    // cout << "v_entry: " << v_entry << "\n";
-                    // cout << "a_entry: " << a_entry << "\n";
-                    // cout << "a: " << graph[a_entry].position.x << "," << graph[a_entry].position.y << "\n";
-                    vector<Point> a_path = astarGrid(current, a_entry);
-                    current = a_path.back();
-                    a_entry = -1;
-                    path.insert(path.end(), a_path.begin() + 1, a_path.end());
-                    // auto astar_end = high_resolution_clock::now();
-                    // cout << "astarGrid time: " << duration_cast<milliseconds>(astar_end - astar_start).count() << "ms\n";
+            for (int i = endIndex; i != -1; i = vertices[i].parentIndex) {
+                Point nextPoint = vertices[i].position;
+
+                if (grid.cells[nextPoint.y][nextPoint.x] == 1) {
+                    nextPoint = findNearestFreeCell(grid, nextPoint, goal);
+                }                
+
+                Point segment_end = getTraversable(grid, nextPoint, path.back());
+                
+                if (segment_end == path.back()) {
+                    path.push_back(nextPoint);
                 }
                 else {
-                    break;
-                }
-                if (path.back().x == goal.x && path.back().y == goal.y) {
-                    break;
+                    // Refactor: it's possible that the voronoi vertex itself is inside the obstacle, and in some cases, the whole edge could be inside the obstacle
+                    astar(grid, segment_end, path.back(), path);
+                    path.push_back(nextPoint);
                 }
             }
 
+            // connect to start
+            if (path.back() != start) {
+                astar(grid, start, path.back(), path);
+                path.push_back(start);
+            }
+            
+            reverse(path.begin(), path.end());
+        }
+
+        void astar(const Grid& grid, const Point& start, const Point& goal, vector<Point>& path) {
+            searchId++;
+            priority_queue<AstarNode, vector<AstarNode>, greater<AstarNode>> openList;
+
+            int start_x = (int)start.x;
+            int start_y = (int)start.y;
+            AstarNode& startNode = astarGrid[start_y][start_x];
+            startNode.x = start_x;
+            startNode.y = start_y;
+            startNode.gscore = 0;
+            startNode.gscoreId = searchId;
+            startNode.score = distance(start, goal);
+            startNode.parentX = -1;
+            startNode.parentY = -1;
+            openList.push(startNode);
+
+            double moveCost = 1;
+            bool goalReached = false;
+            pair<int,int> endIndex = {-1,-1};
+
+            while (!openList.empty()) {
+                AstarNode current = openList.top();
+                openList.pop();
+
+                if (astarGrid[current.y][current.x].closedId == searchId) {
+                    continue;
+                }
+                astarGrid[current.y][current.x].closedId = searchId;
+
+                if (isEdgeValid(grid, Point{(double)current.x, (double)current.y}, goal)) {
+                    goalReached = true;
+                    endIndex = {current.x, current.y};
+                    break;
+                }
+
+                for (int i = 0; i < directions.size(); i++) {
+                    int x = current.x + directions[i].first;
+                    int y = current.y + directions[i].second;
+                    moveCost = 1;
+
+                    if (x < 0 || x >= grid.width || y < 0 || y >= grid.height) {
+                        continue;
+                    }
+
+                    if (grid.cells[y][x] == 1) {
+                        continue;
+                    }
+
+                    if (directions[i].first != 0 && directions[i].second != 0) {
+                        if (grid.cells[current.y][current.x + directions[i].first] == 1 && grid.cells[current.y + directions[i].second][current.x] == 1) {
+                            continue;
+                        }
+                        moveCost = 1.414;
+                    }
+
+                    double gscore = current.gscore + moveCost;
+                    AstarNode& neighbor = astarGrid[y][x];
+                    if (neighbor.gscoreId != searchId || gscore < neighbor.gscore) {
+                        neighbor.x = x;
+                        neighbor.y = y;
+                        neighbor.gscore = gscore;
+                        neighbor.gscoreId = searchId;
+                        neighbor.score = gscore + distance({(double)x, (double)y}, goal);
+                        neighbor.parentX = current.x;
+                        neighbor.parentY = current.y;
+                        openList.push(neighbor);
+                    }
+                }
+            }
+
+            if (goalReached) {
+                int x = endIndex.first;
+                int y = endIndex.second;
+                while (x != -1 && y != -1) {
+                    path.push_back({(double)x, (double)y});
+                    int next_x = astarGrid[y][x].parentX;
+                    int next_y = astarGrid[y][x].parentY;
+                    x = next_x;
+                    y = next_y;
+                }
+            }
+        }
+    
+    public:
+        Pathfinder(Grid& grid, Point& start, Point& goal, vector<VoronoiVertex> vertices) {
+            this->searchId = -1;
+            this->astarGrid.resize(grid.height, vector<AstarNode>(grid.width));
+            findPath(grid, start, goal, vertices);
+        }
+
+        vector<Point> getPath() {
             return path;
         }
+    
 };
