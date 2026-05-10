@@ -9,7 +9,7 @@ import os
 import argparse
 from PIL import Image
 
-def create_gif(input_dir="output", output_file="animation.gif", duration=500, loop=0):
+def create_gif(input_dir="output", output_file="animation.gif", duration=50, loop=0):
     """
     Create an animated GIF from frame images.
     

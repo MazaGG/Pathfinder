@@ -1,10 +1,8 @@
 name: Analyze Results
 
 on:
-  workflow_run:
-    workflows: ["Benchmark"]
-    types:
-      - completed
+  repository_dispatch:
+    types: [run-analysis]
 
 jobs:
   analyze:
@@ -22,24 +20,17 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
+          pattern: result-*
           path: artifacts
+          merge-multiple: true
 
       - name: Collect summaries
         run: |
           mkdir -p collected
           find artifacts -name "_summary.csv" -exec cp {} collected/ \;
-          # Rename to include obstacle count from folder name
-          for f in collected/_summary.csv; do
-            dir=$(dirname "$f")
-            obs=$(echo "$dir" | grep -oP 'o\d+' | head -1)
-            if [ -n "$obs" ]; then
-              cp "$f" "collected/${obs}_summary.csv"
-            fi
-          done
-          # If only one file (same name), collect them differently
-          python3 scripts/collect_summaries.py artifacts collected
+          python3 scripts/collect_summaries.py
 
-      - name: Plot combined results
+      - name: Plot analysis
         run: python3 scripts/plot_analysis.py
 
       - name: Upload analysis
