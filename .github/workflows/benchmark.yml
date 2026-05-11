@@ -55,11 +55,11 @@ jobs:
       - name: Run summary
         run: python3 scripts/summary.py
 
-      # - name: Plot results
-      #   run: python3 scripts/plot.py
+      - name: Plot results
+        run: python3 scripts/plot.py
 
-      # - name: Generate gif
-      #   run: python3 scripts/gif.py
+      - name: Generate gif
+        run: python3 scripts/gif.py
 
       - name: Upload results
         uses: actions/upload-artifact@v4
