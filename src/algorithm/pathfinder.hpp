@@ -13,9 +13,7 @@ class Pathfinder {
     private:
         // vector<Point> globalPath;
         // vector<Point> localPath;
-        int searchId;
         vector<Point> path;
-        vector<vector<AstarNode>> astarGrid;
         vector<pair<int,int>> directions = {{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1}};
 
         Point getTraversable(const Grid& grid, const Point& p, const Point& q) { // using Bresenham's line algorithm
@@ -54,7 +52,7 @@ class Pathfinder {
             }
         }
 
-        Point findNearestFreeCell(const Grid& grid, const Point& start, const Point& goal) {
+        Point findNearestFreeCell(const Grid& grid, vector<vector<AstarNode>>& astarGrid, int& searchId, const Point& start, const Point& goal) {
             searchId++;
             priority_queue<AstarNode, vector<AstarNode>, greater<AstarNode>> openList;
 
@@ -118,7 +116,7 @@ class Pathfinder {
             return Point{-1, -1};
         }
 
-        void findPath(const Grid& grid, const Point& start, const Point& goal, vector<VoronoiVertex>& vertices) {
+        void findPath(const Grid& grid, vector<vector<AstarNode>>& astarGrid, int& searchId, const Point& start, const Point& goal, vector<VoronoiVertex>& vertices) {
             auto global_start = high_resolution_clock::now();
 
             int start_index = -1;
@@ -187,21 +185,21 @@ class Pathfinder {
             }
 
             auto global_end = high_resolution_clock::now();
-            buildPath(grid, endIndex, start, goal, vertices);
+            buildPath(grid, astarGrid, searchId, endIndex, start, goal, vertices);
             auto build_end = high_resolution_clock::now();
 
             cout << "   Global Pathfinding: " << duration_cast<milliseconds>(global_end - global_start).count() << "ms\n";
             cout << "   Local Pathfinding: " << duration_cast<milliseconds>(build_end - global_end).count() << "ms\n";
         }
 
-        void buildPath (const Grid& grid, const int& endIndex, const Point& start, const Point& goal, const vector<VoronoiVertex>& vertices) {
+        void buildPath (const Grid& grid, vector<vector<AstarNode>>& astarGrid, int& searchId, const int& endIndex, const Point& start, const Point& goal, const vector<VoronoiVertex>& vertices) {
             path.push_back(goal);
 
             for (int i = endIndex; i != -1; i = vertices[i].parentIndex) {
                 Point nextPoint = vertices[i].position;
 
                 if (grid.cells[nextPoint.y][nextPoint.x] == 1) {
-                    nextPoint = findNearestFreeCell(grid, nextPoint, goal);
+                    nextPoint = findNearestFreeCell(grid, astarGrid, searchId, nextPoint, goal);
                 }                
 
                 Point segment_end = getTraversable(grid, nextPoint, path.back());
@@ -211,21 +209,21 @@ class Pathfinder {
                 }
                 else {
                     // Refactor: it's possible that the voronoi vertex itself is inside the obstacle, and in some cases, the whole edge could be inside the obstacle
-                    astar(grid, segment_end, path.back(), path);
+                    astar(grid, astarGrid, searchId, segment_end, path.back(), path);
                     path.push_back(nextPoint);
                 }
             }
 
             // connect to start
             if (path.back() != start) {
-                astar(grid, start, path.back(), path);
+                astar(grid, astarGrid, searchId, start, path.back(), path);
                 path.push_back(start);
             }
             
             reverse(path.begin(), path.end());
         }
 
-        void astar(const Grid& grid, const Point& start, const Point& goal, vector<Point>& path) {
+        void astar(const Grid& grid, vector<vector<AstarNode>>& astarGrid, int& searchId, const Point& start, const Point& goal, vector<Point>& path) {
             searchId++;
             priority_queue<AstarNode, vector<AstarNode>, greater<AstarNode>> openList;
 
@@ -309,10 +307,9 @@ class Pathfinder {
         }
     
     public:
-        Pathfinder(Grid& grid, Point& start, Point& goal, vector<VoronoiVertex> vertices) {
-            this->searchId = -1;
-            this->astarGrid.resize(grid.height, vector<AstarNode>(grid.width));
-            findPath(grid, start, goal, vertices);
+        Pathfinder(Grid& grid, vector<vector<AstarNode>>& astarGrid, int& searchId, Point& start, Point& goal, vector<VoronoiVertex> vertices) {
+            searchId++;
+            findPath(grid, astarGrid, searchId, start, goal, vertices);
         }
 
         vector<Point> getPath() {

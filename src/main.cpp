@@ -35,6 +35,7 @@ int main(int argc, char** argv) {
     int frame = 0;
     vector<Obstacle> obstacles;
     ObstacleGenerator generator(seed, numObstacle, v_max, radius_min, radius_max, grid);
+    HybridVoronoiA hybrid(grid);
     ofstream file0("output/_results.csv");
 
     while (frame != frames) {
@@ -101,7 +102,6 @@ int main(int argc, char** argv) {
         // ALGORITHMS
 
         // Hybrid Voronoi A*
-        HybridVoronoiA hybrid;
         hybrid.run(reachable, centers, start, goal);
         vector<VoronoiVertex> vertices = hybrid.getVertices();
         vector<Point> hybrid_path = hybrid.getPath();
