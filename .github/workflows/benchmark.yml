@@ -44,7 +44,7 @@ jobs:
 
       - name: Run program
         run: |
-          ./build/pathfinder \
+          taskset -c 0 ./build/pathfinder \
           ${{ matrix.seed }} \
           ${{ matrix.frames }} \
           ${{ matrix.width }} \
