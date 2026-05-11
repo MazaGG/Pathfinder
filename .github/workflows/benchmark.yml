@@ -13,9 +13,9 @@ jobs:
       matrix:
         seed: [1]
         frames: [100]
-        width: [2000]
-        height: [2000]
-        obstacles: [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300, 310, 320, 330, 340, 350, 360, 370, 380, 390, 400, 410, 420, 430, 440, 450, 460, 470, 480, 490, 500]
+        width: [1000]
+        height: [1000]
+        obstacles: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300]
 
     steps:
       - uses: actions/checkout@v4
@@ -55,11 +55,11 @@ jobs:
       - name: Run summary
         run: python3 scripts/summary.py
 
-      - name: Plot results
-        run: python3 scripts/plot.py
+      # - name: Plot results
+      #   run: python3 scripts/plot.py
 
-      - name: Generate gif
-        run: python3 scripts/gif.py
+      # - name: Generate gif
+      #   run: python3 scripts/gif.py
 
       - name: Upload results
         uses: actions/upload-artifact@v4
