@@ -6,6 +6,10 @@ import glob
 # Find all frame files
 frame_files = sorted(glob.glob("output/obstacles-*.csv"))
 
+# Only keep the first frame
+if len(frame_files) != 100:
+    frame_files = frame_files[:1]  # Keep only the first one
+
 # Extract frame numbers from filenames
 def get_frame_num(filename):
     return int(filename.split("-")[-1].replace(".csv", ""))
@@ -35,6 +39,13 @@ for frame_file in frame_files:
     occupancy = np.array(occupancy_map)
 
     if os.path.exists(f"output/voronoi_vertices-{frame}.csv"):
+
+        # Load cluster centers
+        cluster_centers = []
+        with open(f"output/cluster_centers-{frame}.csv") as f:
+            for line in f:
+                x, y = map(float, line.strip().split(","))
+                cluster_centers.append((x, y))
     
         # Load voronoi vertices for this frame
         voronoi_vertices = []
@@ -90,15 +101,19 @@ for frame_file in frame_files:
     fig, ax = plt.subplots(figsize=(10, 10))
     
     # Obstacles
-    ax.imshow(occupancy, cmap="gray_r", origin="lower",
-            extent=[0, occupancy.shape[1], 0, occupancy.shape[0]])
+    ax.imshow(occupancy, cmap="gray_r", origin="lower", extent=[0, occupancy.shape[1], 0, occupancy.shape[0]])
     
-    for poly in polygons:
-        xs = [p[0] for p in poly] + [poly[0][0]]
-        ys = [p[1] for p in poly] + [poly[0][1]]
-        ax.plot(xs, ys, color="red", linewidth=1)
+    # for poly in polygons:
+    #     xs = [p[0] for p in poly] + [poly[0][0]]
+    #     ys = [p[1] for p in poly] + [poly[0][1]]
+    #     ax.plot(xs, ys, color="red", linewidth=1)
     
     if os.path.exists(f"output/voronoi_vertices-{frame}.csv"):
+
+        # # Plot cluster centers
+        # if cluster_centers:
+        #     centers_x, centers_y = zip(*cluster_centers)
+        #     plt.scatter(centers_x, centers_y, c='black', s=80, marker='o', zorder=5)
 
         # Voronoi Diagram
         for i, v in enumerate(voronoi_vertices):
@@ -112,27 +127,27 @@ for frame_file in frame_files:
         if len(hybrid_path) > 1:
             path_xs = [p[0] for p in hybrid_path]
             path_ys = [p[1] for p in hybrid_path]
-            ax.plot(path_xs, path_ys, color="blue", linewidth=2, label="Hybrid Voronoi A*")
+            ax.plot(path_xs, path_ys, color="blue", linewidth=2)
         
-        if len(astar_path) > 1:
-            path_xs = [p[0] for p in astar_path]
-            path_ys = [p[1] for p in astar_path]
-            ax.plot(path_xs, path_ys, color="red", linewidth=2, label="A* Grid")
+        # if len(astar_path) > 1:
+        #     path_xs = [p[0] for p in astar_path]
+        #     path_ys = [p[1] for p in astar_path]
+        #     ax.plot(path_xs, path_ys, color="red", linewidth=2)
         
-        # if len(dstar_path) > 1:
-        #     path_xs = [p[0] for p in dstar_path]
-        #     path_ys = [p[1] for p in dstar_path]
-        #     ax.plot(path_xs, path_ys, color="orange", linewidth=2, label="D* Grid")
+        # # if len(dstar_path) > 1:
+        # #     path_xs = [p[0] for p in dstar_path]
+        # #     path_ys = [p[1] for p in dstar_path]
+        # #     ax.plot(path_xs, path_ys, color="orange", linewidth=2, label="D* Grid")
 
-        if len(cdt_path) > 1:
-            path_xs = [p[0] for p in cdt_path]
-            path_ys = [p[1] for p in cdt_path]
-            ax.plot(path_xs, path_ys, color="orange", linewidth=2, label="CDT Planner")
+        # # if len(cdt_path) > 1:
+        # #     path_xs = [p[0] for p in cdt_path]
+        # #     path_ys = [p[1] for p in cdt_path]
+        # #     ax.plot(path_xs, path_ys, color="orange", linewidth=2)
 
-        if len(djk_path) > 1:
-            path_xs = [p[0] for p in djk_path]
-            path_ys = [p[1] for p in djk_path]
-            ax.plot(path_xs, path_ys, color="green", linewidth=2, label="Dijkstra")
+        # if len(djk_path) > 1:
+        #     path_xs = [p[0] for p in djk_path]
+        #     path_ys = [p[1] for p in djk_path]
+        #     ax.plot(path_xs, path_ys, color="green", linewidth=2)
         
     # Config
     ax.set_aspect('equal')

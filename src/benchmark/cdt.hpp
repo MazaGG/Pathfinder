@@ -17,10 +17,51 @@ class CDTplanner {
 
         CDT cdt;
         vector<Point> path;
+        // vector<vector<faceNode>> faceGrid;
         vector<VoronoiVertex> vertices;
         const Grid* gridPtr;  // Store grid reference for edge validation
         double time;
         double length;
+
+        // void buildGraph(const Grid& grid, const vector<Obstacle>& obstacles) {
+        //     vector<CDT::Point> points;
+        //     for (const auto& obs: obstacles) {
+        //         for (const auto& v: obs.vertices) {
+        //             points.emplace_back(v.x, v.y);
+        //         }
+        //     }
+        //     cdt.insert(points.begin(),points.end());
+
+        //     CDT::Point bl(0.5, 0.5);
+        //     CDT::Point br(grid.width - 0.5, 0.5);
+        //     CDT::Point tr(grid.width - 0.5, grid.height - 0.5);
+        //     CDT::Point tl(0.5, grid.height - 0.5);            
+        //     cdt.insert_constraint(bl, br);  // Bottom
+        //     cdt.insert_constraint(br, tr);  // Right
+        //     cdt.insert_constraint(tr, tl);  // Top
+        //     cdt.insert_constraint(tl, bl);  // Left
+        // }
+
+        // void findPath(const Point& start, const Point& goal) {
+        //     // find what face is start located
+        //     // find what face is goal located
+        //     // 
+        //     // initialize priority queue of <face, double>
+        //     // add <start face, 0> to queue
+        //     // while queue is not empty:
+        //     //      current face = queue.pop
+        //     //      if current face == goal face:
+        //     //          path found
+        //     //      for each neighbor face of current face:
+        //     //          point = bisector of current and neighbor's shared edge;
+        //     //          if collision to go to point:
+        //     //              continue
+        //     //          if the point is outside grid:
+        //     //              continue
+        //     //          check if we can improve parent via current
+        //     //          add to queue
+        // }
+
 
         void buildGraph(const Grid& grid, const vector<Obstacle>& obstacles) {
             // 1. Insert all obstacle vertices as sites
@@ -197,7 +238,7 @@ class CDTplanner {
                 priority_queue<pair<double,int>, vector<pair<double,int>>, greater<pair<double,int>>> openList;
                 
                 gScore[startIdx] = distance(start, vertices[startIdx].position);
-                openList.push({gScore[startIdx] + distance(vertices[startIdx].position, goal), startIdx});
+                openList.push({gScore[startIdx], startIdx});
                 
                 bool found = false;
                 int bestNode = startIdx;
@@ -225,7 +266,7 @@ class CDTplanner {
                             gScore[neighbor] = tentativeG;
                             cameFrom[neighbor] = current;
                             double fScore = tentativeG + distance(vertices[neighbor].position, goal);
-                            openList.push({fScore, neighbor});
+                            openList.push({gScore[neighbor], neighbor});
                         }
                     }
                 }
@@ -282,8 +323,11 @@ class CDTplanner {
             gridPtr = &grid;  // Store reference for edge validation
             auto start_time = high_resolution_clock::now();
             buildGraph(grid, obstacles);
+            auto path_time = high_resolution_clock::now();
             findPath(start, goal);
             auto end_time = high_resolution_clock::now();
+            cout << "   Build Graph: " << duration_cast<milliseconds>(path_time - start_time).count() << "ms\n";
+            cout << "   Find Path: " << duration_cast<milliseconds>(end_time - path_time).count() << "ms\n";
             this->time = duration_cast<milliseconds>(end_time - start_time).count();
             this->length = computePathLength(path);
         }

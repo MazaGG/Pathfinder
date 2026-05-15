@@ -74,33 +74,30 @@ ax2.set_title("Runtime vs Obstacles (Graph-Based Methods)")
 ax2.legend()
 ax2.grid(True, alpha=0.3)
 
-# Plot 3: Path Length - ALL algorithms
+# Plot 3: Path Length - Hybrid vs Dijkstra ONLY
 ax3 = axes[1][0]
-for algo, d in data.items():
-    ax3.plot(d["obstacles"], d["length"], marker=markers.get(algo, "x"), 
-             color=colors.get(algo, "gray"), label=algo, linewidth=2, markersize=6)
+path_algos = ["Hybrid Voronoi A*", "Dijkstra"]
+for algo in path_algos:
+    if algo in data:
+        d = data[algo]
+        ax3.plot(d["obstacles"], d["length"], marker=markers.get(algo, "x"), 
+                 color=colors.get(algo, "gray"), label=algo, linewidth=2, markersize=6)
 ax3.set_xlabel("Number of Obstacles")
 ax3.set_ylabel("Average Path Length")
-ax3.set_title("Path Length vs Obstacles")
+ax3.set_title("Path Length vs Obstacles (Hybrid vs Optimal)")
 ax3.legend()
 ax3.grid(True, alpha=0.3)
 
-# Plot 4: Path Length - Zoomed (exclude Dijkstra/A* if they dwarf others)
+# Plot 4: Runtime - ALL algorithms (linear scale)
 ax4 = axes[1][1]
 for algo, d in data.items():
-    ax4.plot(d["obstacles"], d["length"], marker=markers.get(algo, "x"), 
+    ax4.plot(d["obstacles"], d["time"], marker=markers.get(algo, "x"), 
              color=colors.get(algo, "gray"), label=algo, linewidth=2, markersize=6)
 ax4.set_xlabel("Number of Obstacles")
-ax4.set_ylabel("Average Path Length")
-ax4.set_title("Path Length vs Obstacles (Zoomed)")
+ax4.set_ylabel("Average Time (ms)")
+ax4.set_title("Runtime vs Obstacles (All Algorithms - Linear Scale)")
 ax4.legend()
 ax4.grid(True, alpha=0.3)
-# Auto-zoom: find min/max excluding outliers if needed
-all_lengths = []
-for algo, d in data.items():
-    all_lengths.extend(d["length"])
-if all_lengths:
-    ax4.set_ylim(min(all_lengths) * 0.95, max(all_lengths) * 1.05)
 
 plt.tight_layout()
 plt.savefig("analysis_plot.png", dpi=150)

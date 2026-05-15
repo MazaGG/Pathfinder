@@ -224,7 +224,7 @@ class Dstar {
                     if (oldGrid.cells[ny][nx] == 0) {
                         cost = distance(nx, ny, change.x, change.y);
                     }
-                    if (dstarGrid[change.y][change.x].hscore > neighbor.hscore + cost) {
+                    if ((neighbor.parentX != change.x || neighbor.parentY != change.y) && dstarGrid[change.y][change.x].hscore > neighbor.hscore + cost) {
                         double hscore = neighbor.hscore + cost;
                         change.hscore = hscore;
                         change.parentX = neighbor.x;

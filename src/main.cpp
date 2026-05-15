@@ -152,11 +152,11 @@ int main(int argc, char** argv) {
         // PLOTTING
 
         // Cluster Centers
-        // ofstream file3("output/cluster_centers.csv");
-        // for (int i = 0; i < centers.size(); i++) {
-        //     file3 << centers[i].x << "," << centers[i].y << "\n";
-        // }
-        // file3.close();
+        ofstream file12("output/cluster_centers-" + std::to_string(frame) + ".csv");
+        for (int i = 0; i < centers.size(); i++) {
+            file12 << centers[i].x << "," << centers[i].y << "\n";
+        }
+        file12.close();
 
         // Voronoi Vertices
         ofstream file4("output/voronoi_vertices-" + std::to_string(frame) + ".csv");
